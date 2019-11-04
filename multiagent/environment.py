@@ -57,7 +57,7 @@ class MultiAgentEnv(gym.Env):
             if len(total_action_space) > 1:
                 # all action spaces are discrete, so simplify to MultiDiscrete action space
                 if all([isinstance(act_space, spaces.Discrete) for act_space in total_action_space]):
-                    act_space = spaces.MultiDiscrete([[0,act_space.n-1] for act_space in total_action_space])
+                    act_space = spaces.MultiDiscrete([[0, act_space.n-1] for act_space in total_action_space])
                 else:
                     act_space = spaces.Tuple(total_action_space)
                 self.action_space.append(act_space)
@@ -100,7 +100,10 @@ class MultiAgentEnv(gym.Env):
             done_n.append(self._get_done(agent))
 
             info_n['n'].append(self._get_info(agent))
-
+        #
+        # for agent in self.agents:
+        #     print(agent.action.c)
+        #
         # all agents get total reward in cooperative case
         reward = np.sum(reward_n)
         if self.shared_reward:
