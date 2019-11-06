@@ -1,9 +1,11 @@
+import torch
 from torch import Tensor
 from torch.autograd import Variable
 from torch.optim import Adam
 from .networks import MLPNetwork
 from .misc import hard_update, gumbel_softmax, onehot_from_logits
 from .noise import OUNoise
+import torch.nn as nn
 
 class DDPGAgent(object):
     """
@@ -11,13 +13,16 @@ class DDPGAgent(object):
     critic, exploration noise)
     """
     def __init__(self, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
-                 lr=0.01, discrete_action=True):
+                 lr=0.01, discrete_action=True, device="cuda:0"):
         """
         Inputs:
             num_in_pol (int): number of dimensions for policy input
             num_out_pol (int): number of dimensions for policy output
             num_in_critic (int): number of dimensions for critic input
         """
+        self.device = device
+        # self.device = "cpu"
+
         self.policy = MLPNetwork(num_in_pol, num_out_pol,
                                  hidden_dim=hidden_dim,
                                  constrain_out=True,
@@ -32,6 +37,18 @@ class DDPGAgent(object):
         self.target_critic = MLPNetwork(num_in_critic, 1,
                                         hidden_dim=hidden_dim,
                                         constrain_out=False)
+
+        if self.device == "cuda:0":
+            self.policy = nn.DataParallel(self.policy)
+            self.critic = nn.DataParallel(self.critic)
+            self.target_policy = nn.DataParallel(self.target_policy)
+            self.target_critic = nn.DataParallel(self.target_critic)
+
+        self.policy.to(self.device)
+        self.critic.to(self.device)
+        self.target_policy.to(self.device)
+        self.target_critic.to(self.device)
+
         hard_update(self.target_policy, self.policy)
         hard_update(self.target_critic, self.critic)
         self.policy_optimizer = Adam(self.policy.parameters(), lr=lr)
@@ -61,7 +78,8 @@ class DDPGAgent(object):
         Outputs:
             action (PyTorch Variable): Actions for this agent
         """
-        action = self.policy(obs)
+        # obs.to(self.device)
+        action = self.policy(obs).to(self.device)
         if self.discrete_action:
             if explore:
                 action = gumbel_softmax(action, hard=True)

@@ -12,7 +12,7 @@ class MADDPG(object):
     Wrapper class for DDPG-esque (i.e. also MADDPG) agents in multi-agent task
     """
     def __init__(self, agent_init_params, alg_types,
-                 gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64,
+                 gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64, device='cuda:0',
                  discrete_action=False):
         """
         Inputs:
@@ -32,7 +32,7 @@ class MADDPG(object):
         self.nagents = len(alg_types)
         self.alg_types = alg_types
         self.agents = [DDPGAgent(lr=lr, discrete_action=discrete_action,
-                                 hidden_dim=hidden_dim,
+                                 hidden_dim=hidden_dim, device=device,
                                  **params)
                        for params in agent_init_params]
         self.agent_init_params = agent_init_params
@@ -40,10 +40,14 @@ class MADDPG(object):
         self.tau = tau
         self.lr = lr
         self.discrete_action = discrete_action
-        self.pol_dev = 'cpu'  # device for policies
-        self.critic_dev = 'cpu'  # device for critics
-        self.trgt_pol_dev = 'cpu'  # device for target policies
-        self.trgt_critic_dev = 'cpu'  # device for target critics
+        # self.pol_dev = 'cpu'  # device for policies
+        # self.critic_dev = 'cpu'  # device for critics
+        # self.trgt_pol_dev = 'cpu'  # device for target policies
+        # self.trgt_critic_dev = 'cpu'  # device for target critics
+        self.pol_dev = device  # device for policies
+        self.critic_dev = device  # device for critics
+        self.trgt_pol_dev = device  # device for target policies
+        self.trgt_critic_dev = device  # device for target critics
         self.niter = 0
 
     @property
@@ -98,6 +102,7 @@ class MADDPG(object):
         curr_agent.critic_optimizer.zero_grad()
         if self.alg_types[agent_i] == 'MADDPG':
             if self.discrete_action: # one-hot encode action
+                next_obs
                 all_trgt_acs = [onehot_from_logits(pi(nobs)) for pi, nobs in
                                 zip(self.target_policies, next_obs)]
             else:
@@ -180,13 +185,13 @@ class MADDPG(object):
             soft_update(a.target_policy, a.policy, self.tau)
         self.niter += 1
 
-    def prep_training(self, device='gpu'):
+    def prep_training(self, device="cuda:0"):
         for a in self.agents:
             a.policy.train()
             a.critic.train()
             a.target_policy.train()
             a.target_critic.train()
-        if device == 'gpu':
+        if device == "cuda:0":
             fn = lambda x: x.cuda()
         else:
             fn = lambda x: x.cpu()
@@ -210,7 +215,7 @@ class MADDPG(object):
     def prep_rollouts(self, device='cpu'):
         for a in self.agents:
             a.policy.eval()
-        if device == 'gpu':
+        if device == "cuda:0":
             fn = lambda x: x.cuda()
         else:
             fn = lambda x: x.cpu()
@@ -231,7 +236,7 @@ class MADDPG(object):
 
     @classmethod
     def init_from_env(cls, env, agent_alg="MADDPG", adversary_alg="MADDPG",
-                      gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64):
+                      gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64, device="cuda:0"):
         """
         Instantiate instance of this class from multi-agent environment
         """
@@ -263,7 +268,8 @@ class MADDPG(object):
                      'hidden_dim': hidden_dim,
                      'alg_types': alg_types,
                      'agent_init_params': agent_init_params,
-                     'discrete_action': discrete_action}
+                     'discrete_action': discrete_action,
+                     'device': device}
         instance = cls(**init_dict)
         instance.init_dict = init_dict
         return instance
