@@ -17,19 +17,18 @@ MAKE_NEW_LOG = True
 LOAD_MODEL = False
 USE_CUDA = False
 USE_CUDA = torch.cuda.is_available()
-num_runs = 20
 
 if USE_CUDA:
     device = "cuda:0"
 else:
     device = "cpu"
 
-
 if __name__ == '__main__':
     if not LOAD_MODEL:
+        config = Arglist()
+        num_runs = config.num_runs
 
         for i in range(num_runs):
-            config = Arglist()
             model_dir = Path('./models') / config.env_id / config.model_name
             if not model_dir.exists():
                 curr_run = 'run6'

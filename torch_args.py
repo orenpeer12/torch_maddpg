@@ -4,11 +4,14 @@ class Arglist:
     def __init__(self):
         self.env_id = "simple_tag"
         self.model_name = "./test_model_comm"
+        self.predators_comm = True
+        self.predators_comm_size = 8    # each agent sends a 1-hot-vector in this size to all teammates.
         # self.seed = 1
         # self.seed = random.randint(0, 1e5)
         self.n_rollout_threads = 1
         self.n_training_threads = 6
         self.buffer_length = int(1e6)
+        self.num_runs = 1
         self.n_episodes = 25000
         self.episode_length = 25
         self.steps_per_update = 100
@@ -24,5 +27,5 @@ class Arglist:
         self.agent_alg = "MADDPG"
         self.adversary_alg = "MADDPG" # choices=['MADDPG', 'DDPG']
         self.discrete_action = True
-        self.load_model_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model1\\run6\\model.pt"
-        # self.load_model_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model/run6/incremental/model_ep9001.pt"
+        self.load_model_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model_comm\\run19\\model.pt"
+        # self.load_model_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model_comm/run1/model.pt"

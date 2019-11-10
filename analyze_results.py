@@ -17,7 +17,7 @@ import gc
 
 if not sys.platform.startswith('win'):
     # from server
-    base_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model1/"
+    base_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model_comm/"
     path_to_summary = base_path + "logs/summary.json"
     path_to_rewards = base_path + "episodes_rewards.npy"
 
@@ -34,7 +34,7 @@ DISPLAY_SINGLE_RUN_REWARDS = False
 DISPLAY_MEAN_RUN_REWARDS = False
 SHOW_RUN = True
 
-num_agents = 4
+num_agents = 5
 
 if DISPLAY_LOSS:
     # show loss funcs:
