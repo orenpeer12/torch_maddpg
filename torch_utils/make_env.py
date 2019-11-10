@@ -51,13 +51,13 @@ def make_env(scenario_name, benchmark=False, discrete_action=False):
 from torch_utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 import numpy as np
 
-def make_parallel_env(env_id, n_rollout_threads, seed, discrete_action):
+def make_parallel_env(env_id, n_rollout_threads, discrete_action):
 
     def get_env_fn(rank):
         def init_env():
             env = make_env(env_id, discrete_action=discrete_action)
             # env.seed(seed + rank * 1000)
-            np.random.seed(seed + rank * 1000)
+            # np.random.seed(seed + rank * 1000)
             return env
         return init_env
     if n_rollout_threads == 1:

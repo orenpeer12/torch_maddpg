@@ -11,13 +11,13 @@ from torch_utils.make_env import make_parallel_env
 from torch_utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
-
+# are you there?
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
-# USE_CUDA = torch.cuda.is_available()
 USE_CUDA = False
-num_runs = 100
+USE_CUDA = torch.cuda.is_available()
+num_runs = 20
 
 if USE_CUDA:
     device = "cuda:0"
@@ -27,18 +27,19 @@ else:
 
 if __name__ == '__main__':
     if not LOAD_MODEL:
+
         for i in range(num_runs):
             config = Arglist()
             model_dir = Path('./models') / config.env_id / config.model_name
             if not model_dir.exists():
-                curr_run = 'run1'
+                curr_run = 'run6'
             else:
                 if MAKE_NEW_LOG:
                     exst_run_nums = [int(str(folder.name).split('run')[1]) for folder in
                                      model_dir.iterdir() if
                                      str(folder.name).startswith('run')]
                     if len(exst_run_nums) == 0:
-                        curr_run = 'run1'
+                        curr_run = 'run6'
                     else:
                         curr_run = 'run%i' % (max(exst_run_nums) + 1)
                 else:
@@ -49,12 +50,11 @@ if __name__ == '__main__':
                 os.makedirs(log_dir)
             logger = SummaryWriter(str(log_dir))
 
-            torch.manual_seed(config.seed)
-            np.random.seed(config.seed)
+            # torch.manual_seed(config.seed)
+            # np.random.seed(config.seed)
             if not USE_CUDA:
                 torch.set_num_threads(config.n_training_threads)
-            env = make_parallel_env(config.env_id, config.n_rollout_threads, config.seed,
-                                    config.discrete_action)
+            env = make_parallel_env(config.env_id, config.n_rollout_threads, config.discrete_action)
             maddpg = MADDPG.init_from_env(env, agent_alg=config.agent_alg,
                                           adversary_alg=config.adversary_alg,
                                           tau=config.tau,
@@ -65,8 +65,10 @@ if __name__ == '__main__':
                                          [acsp.shape[0] if isinstance(acsp, Box) else acsp.n
                                           for acsp in env.action_space])
             t = 0
+            # reset test results arrays
             all_ep_rewards = []
             mean_ep_rewards = []
+
             for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
                 ep_rewards = np.zeros((1, len(env.agent_types)))
                 print("Episodes %i-%i of %i" % (ep_i + 1,
@@ -82,13 +84,14 @@ if __name__ == '__main__':
 
                 for et_i in range(config.episode_length):
                     # rearrange observations to be per agent, and convert to torch Variable
-                    torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])).to(device),
+                    torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
                                           requires_grad=False)
                                  for i in range(maddpg.nagents)]
                     # get actions as torch Variables
                     torch_agent_actions = maddpg.step(torch_obs, explore=True)
                     # convert actions to numpy arrays
-                    agent_actions = [ac.detach().cpu().data.numpy() for ac in torch_agent_actions]
+                    # agent_actions = [ac.detach().cpu().data.numpy() for ac in torch_agent_actions]
+                    agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
                     # rearrange actions to be per environment
                     actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
                     next_obs, rewards, dones, infos = env.step(actions)
@@ -108,9 +111,8 @@ if __name__ == '__main__':
                                 maddpg.update(sample, a_i, logger=logger)
                             maddpg.update_all_targets()
                         maddpg.prep_rollouts(device=device)
-                ep_rews = replay_buffer.get_average_rewards(
-                    config.episode_length * config.n_rollout_threads)
 
+                ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
                 mean_ep_rewards.append(ep_rewards / config.episode_length)
                 all_ep_rewards.append(ep_rewards)
 
@@ -122,7 +124,8 @@ if __name__ == '__main__':
                     maddpg.save(run_dir / 'incremental' / ('model_ep%i.pt' % (ep_i + 1)))
                     maddpg.save(run_dir / 'model.pt')
 
-            np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards, "mean_ep_rewards": mean_ep_rewards}, True)
+            np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards.copy(),
+                                                   "mean_ep_rewards": mean_ep_rewards.copy()}, True)
             maddpg.save(run_dir / 'model.pt')
             # env.close()
             logger.export_scalars_to_json(str(log_dir / 'summary.json'))
@@ -130,8 +133,7 @@ if __name__ == '__main__':
 
     else:
         config = Arglist()
-        env = make_parallel_env(config.env_id, config.n_rollout_threads, config.seed,
-                                config.discrete_action)
+        env = make_parallel_env(config.env_id, config.n_rollout_threads, config.discrete_action)
         maddpg = MADDPG.init_from_save(config.load_model_path)
         # show some examples:
         for ep_i in range(0, 3):

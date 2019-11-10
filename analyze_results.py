@@ -17,15 +17,15 @@ import gc
 
 if not sys.platform.startswith('win'):
     # from server
-    base_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model/"
+    base_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model1/"
     path_to_summary = base_path + "logs/summary.json"
     path_to_rewards = base_path + "episodes_rewards.npy"
 
 else:
     # from local
-    base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model\\"
+    base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model_no_shape\\"
     path_to_summary = base_path + "logs\\summary.json"
-    path_to_rewards = base_path + "run1\\episodes_rewards.npy"
+    path_to_rewards = base_path + "run6\\episodes_rewards.npy"
 
 
 CLEANUP = False
@@ -72,6 +72,7 @@ if DISPLAY_MEAN_RUN_REWARDS:
     num_runs = len(runs)
     first = True
     for run in runs:
+        gc.collect()
         rewards_data = np.load(base_path + run + "\\episodes_rewards.npy", allow_pickle=True).item()
         tot_ep_rewards = np.vstack(rewards_data["tot_ep_rewards"])
         mean_ep_rewards = np.vstack(rewards_data["mean_ep_rewards"])
@@ -87,23 +88,27 @@ if DISPLAY_MEAN_RUN_REWARDS:
     mean_reward_per_episode /= num_runs
 
     gc.collect()
-    for agent in range(num_agents):
+    for agent, agent_type in zip([0, 3], ["Predators", "Prey"]):
         agent_tot_ep_rewards = tot_reward_per_episode[:, agent]
         agent_mean_ep_rewards = mean_reward_per_episode[:, agent]
+        tot_ep_rew_mean_across_optim_step = []
+        mean_ep_rew_mean_across_optim_step = []
+        for i in range(0, 14999, 4):
+            tot_ep_rew_mean_across_optim_step.append(agent_tot_ep_rewards[i:i + 4].mean())
+            mean_ep_rew_mean_across_optim_step.append(agent_mean_ep_rewards[i:i + 4].mean())
         plt.figure("agent " + str(agent))
         plt.subplot(2,1,1)
-        plt.plot(agent_tot_ep_rewards)
-        plt.title("total episodic reward average across runs")
-
+        plt.plot(tot_ep_rew_mean_across_optim_step)
+        plt.title(agent_type + " total episodic reward average across runs")
+        plt.xlabel("Optimizer steps")
         plt.subplot(2,1,2)
-        plt.plot(agent_mean_ep_rewards)
-        plt.title("mean episodic reward average across runs")
+        plt.plot(mean_ep_rew_mean_across_optim_step)
+        plt.title(agent_type + " mean episodic reward average across runs")
     plt.show()
 
 if SHOW_RUN:
     config = Arglist()
-    env = make_parallel_env(config.env_id, config.n_rollout_threads, config.seed,
-                            config.discrete_action)
+    env = make_parallel_env(config.env_id, config.n_rollout_threads, config.discrete_action)
     maddpg = MADDPG.init_from_save(config.load_model_path)
     # show some examples:
     for ep_i in range(0, 3):
