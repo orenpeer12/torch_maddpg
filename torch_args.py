@@ -3,7 +3,7 @@ import random
 class Arglist:
     def __init__(self):
         self.env_id = "simple_tag"
-        self.model_name = "./test_model_comm"
+        self.model_name = "./test_model_2prey"
         self.predators_comm = True
         self.predators_comm_size = 8    # each agent sends a 1-hot-vector in this size to all teammates.
         # self.seed = 1

@@ -15,8 +15,8 @@ from torch_args import Arglist
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
-USE_CUDA = False
 USE_CUDA = torch.cuda.is_available()
+USE_CUDA = False
 
 if USE_CUDA:
     device = "cuda:0"
