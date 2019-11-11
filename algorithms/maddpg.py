@@ -35,6 +35,8 @@ class MADDPG(object):
                                  hidden_dim=hidden_dim, device=device,
                                  **params)
                        for params in agent_init_params]
+        # for agent in self.agents:
+        #     print("An agent of type: ")
         self.agent_init_params = agent_init_params
         self.gamma = gamma
         self.tau = tau

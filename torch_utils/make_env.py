@@ -12,7 +12,7 @@ of size (env.world.dim_p + env.world.dim_c, 1). Physical actions precede
 communication actions in this array. See environment.py for more details.
 """
 
-def make_env(scenario_name, benchmark=False, discrete_action=False):
+def make_env(scenario_name, config, benchmark=False, discrete_action=False):
     '''
     Creates a MultiAgentEnv object as env. This can be used similar to a gym
     environment by calling env.reset() and env.step().
@@ -51,16 +51,16 @@ def make_env(scenario_name, benchmark=False, discrete_action=False):
 from torch_utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 import numpy as np
 
-def make_parallel_env(env_id, n_rollout_threads, discrete_action):
+def make_parallel_env(env_id, config):
 
-    def get_env_fn(rank):
-        def init_env():
-            env = make_env(env_id, discrete_action=discrete_action)
+    def get_env_fn(config):
+        def init_env(config):
+            env = make_env(env_id, config, discrete_action=config.discrete_action)
             # env.seed(seed + rank * 1000)
             # np.random.seed(seed + rank * 1000)
             return env
         return init_env
-    if n_rollout_threads == 1:
-        return DummyVecEnv([get_env_fn(0)])
+    if config.n_rollout_threads == 1:
+        return DummyVecEnv([get_env_fn(0)], config)
     else:
-        return SubprocVecEnv([get_env_fn(i) for i in range(n_rollout_threads)])
+        return SubprocVecEnv([get_env_fn(i) for i in range(config.n_rollout_threads)])

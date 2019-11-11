@@ -95,8 +95,8 @@ class SubprocVecEnv(VecEnv):
 
 
 class DummyVecEnv(VecEnv):
-    def __init__(self, env_fns):
-        self.envs = [fn() for fn in env_fns]
+    def __init__(self, env_fns, config):
+        self.envs = [fn(config) for fn in env_fns]
         self.env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), self.env.observation_space, self.env.action_space)
         if all([hasattr(a, 'adversary') for a in self.env.agents]):
