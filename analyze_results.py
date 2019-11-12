@@ -23,7 +23,7 @@ if not sys.platform.startswith('win'):
 
 else:
     # from local
-    base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model_no_shape\\"
+    base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model_2prey\\"
     path_to_summary = base_path + "logs\\summary.json"
     path_to_rewards = base_path + "run6\\episodes_rewards.npy"
 
@@ -78,8 +78,8 @@ if DISPLAY_MEAN_RUN_REWARDS:
         mean_ep_rewards = np.vstack(rewards_data["mean_ep_rewards"])
         if first:
             num_episodes = len(mean_ep_rewards)
-            mean_reward_per_episode = np.zeros((num_episodes, 4))
-            tot_reward_per_episode = np.zeros((num_episodes, 4))
+            mean_reward_per_episode = np.zeros((num_episodes, 5))
+            tot_reward_per_episode = np.zeros((num_episodes, 5))
             first = False
 
         tot_reward_per_episode += tot_ep_rewards
@@ -108,7 +108,7 @@ if DISPLAY_MEAN_RUN_REWARDS:
 
 if SHOW_RUN:
     config = Arglist()
-    env = make_parallel_env(config.env_id, config.n_rollout_threads, config.discrete_action)
+    env = make_parallel_env(config.env_id, config)
     maddpg = MADDPG.init_from_save(config.load_model_path)
     # show some examples:
     for ep_i in range(0, 3):

@@ -6,7 +6,6 @@ import numpy as np
 # environment for all agents in the multiagent world
 # currently code assumes that no agents will be created/destroyed at runtime!
 class MultiAgentEnv(gym.Env):
-# class MultiAgentEnv():
     metadata = {
         'render.modes' : ['human', 'rgb_array']
     }
@@ -58,6 +57,7 @@ class MultiAgentEnv(gym.Env):
                 # all action spaces are discrete, so simplify to MultiDiscrete action space
                 if all([isinstance(act_space, spaces.Discrete) for act_space in total_action_space]):
                     act_space = spaces.MultiDiscrete([[0, act_space.n-1] for act_space in total_action_space])
+                    # act_space = spaces.MultiDiscrete([act_space.n for act_space in total_action_space]) # Oren
                 else:
                     act_space = spaces.Tuple(total_action_space)
                 self.action_space.append(act_space)

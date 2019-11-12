@@ -1,7 +1,7 @@
 import argparse
 import torch
 import time
-import os, sys
+import os, sys, gc
 import numpy as np
 from gym.spaces import Box, Discrete
 from pathlib import Path
@@ -12,7 +12,7 @@ from torch_utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
 
-# 11/11/19 09:36
+# 12/11/19 16:30
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
@@ -24,6 +24,7 @@ if __name__ == '__main__':
         num_runs = config.num_runs
 
         for i in range(num_runs):
+            gc.collect()
             model_dir = Path('./models') / config.env_id / config.model_name
             if not model_dir.exists():
                 curr_run = 'run0'
@@ -45,7 +46,6 @@ if __name__ == '__main__':
 
             config.save(run_dir)
             config.print_args()
-
             logger = SummaryWriter(str(log_dir))
 
             # torch.manual_seed(config.seed)
@@ -53,11 +53,7 @@ if __name__ == '__main__':
             if not config.USE_CUDA:
                 torch.set_num_threads(config.n_training_threads)
             env = make_parallel_env(config.env_id, config)
-            maddpg = MADDPG.init_from_env(env, agent_alg=config.agent_alg,
-                                          adversary_alg=config.adversary_alg,
-                                          tau=config.tau,
-                                          lr=config.lr,
-                                          hidden_dim=config.hidden_dim, device=config.device)
+            maddpg = MADDPG.init_from_env(env, config)
             replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
                                          [obsp.shape[0] for obsp in env.observation_space],
                                          [acsp.shape[0] if isinstance(acsp, Box) else acsp.n

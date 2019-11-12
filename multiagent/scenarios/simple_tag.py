@@ -4,21 +4,26 @@ from multiagent.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
-    def make_world(self):
+    def make_world(self, config):
+        self.predators_comm = config.predators_comm
         world = World()
         # set any world properties first
-        world.dim_c = 2
-        num_good_agents = 2
-        num_adversaries = 3
-        num_agents = num_adversaries + num_good_agents
-        num_landmarks = 2
+        world.dim_c = config.predators_comm_size if config.predators_comm else 0
+        num_prey = config.num_prey
+        num_predators = config.num_predators
+        num_agents = num_predators + num_prey
+        num_landmarks = config.num_landmarks
         # add agents
         world.agents = [Agent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):
             agent.name = 'agent %d' % i
             agent.collide = True
+            agent.adversary = True if i < num_predators else False
+            # if config.predators_comm:
+            #     agent.silent = False if agent.adversary else True   # Oren
+            # else:
+            #     agent.silent = True
             agent.silent = True
-            agent.adversary = True if i < num_adversaries else False
             agent.size = 0.075 if agent.adversary else 0.05
             agent.accel = 3.0 if agent.adversary else 4.0
             #agent.accel = 20.0 if agent.adversary else 25.0
@@ -85,7 +90,7 @@ class Scenario(BaseScenario):
     def agent_reward(self, agent, world):
         # Agents are negatively rewarded if caught by adversaries
         rew = 0
-        shape = True
+        shape = False
         adversaries = self.adversaries(world)
         if shape:  # reward can optionally be shaped (increased reward for increased distance from adversary)
             for adv in adversaries:
@@ -143,5 +148,28 @@ class Scenario(BaseScenario):
             other_pos.append(other.state.p_pos - agent.state.p_pos)
             if not other.adversary:
                 other_vel.append(other.state.p_vel)
-        # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel + comm) # OREN
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+        if self.predators_comm:
+            return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel + comm) # OREN
+        else:
+            return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+
+    # def observation(self, agent, world):
+    #     # get positions of all entities in this agent's reference frame
+    #     entity_pos = []
+    #     for entity in world.landmarks:
+    #         if not entity.boundary:
+    #             entity_pos.append(entity.state.p_pos - agent.state.p_pos)
+    #     # communication of all other agents
+    #     comm = []
+    #     other_pos = []
+    #     other_vel = []
+    #     for other in world.agents:
+    #         if other is agent:
+    #             continue
+    #         if other.adversary:
+    #             comm.append(other.state.c)
+    #         other_pos.append(other.state.p_pos - agent.state.p_pos)
+    #         if not other.adversary:
+    #             other_vel.append(other.state.p_vel)
+    #     # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel + comm) # OREN
+    #     return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)

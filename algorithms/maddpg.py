@@ -122,6 +122,7 @@ class MADDPG(object):
                 trgt_vf_in = torch.cat((next_obs[agent_i],
                                         curr_agent.target_policy(next_obs[agent_i])),
                                        dim=1)
+
         target_value = (rews[agent_i].view(-1, 1) + self.gamma *
                         curr_agent.target_critic(trgt_vf_in) *
                         (1 - dones[agent_i].view(-1, 1)))
@@ -238,11 +239,18 @@ class MADDPG(object):
         torch.save(save_dict, filename)
 
     @classmethod
-    def init_from_env(cls, env, agent_alg="MADDPG", adversary_alg="MADDPG",
-                      gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64, device="cuda:0"):
+    def init_from_env(cls, env, config):
         """
         Instantiate instance of this class from multi-agent environment
         """
+        agent_alg = config.agent_alg
+        adversary_alg = config.adversary_alg
+        gamma = config.gamma
+        tau = config.tau
+        lr = config.lr
+        hidden_dim = config.hidden_dim
+        device = config.device
+
         agent_init_params = []
         alg_types = [adversary_alg if atype == 'adversary' else agent_alg for
                      atype in env.agent_types]
