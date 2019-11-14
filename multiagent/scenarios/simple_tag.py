@@ -136,6 +136,7 @@ class Scenario(BaseScenario):
         for entity in world.landmarks:
             if not entity.boundary:
                 entity_pos.append(entity.state.p_pos - agent.state.p_pos)
+                # entity_pos.append(np.array([11, 11]))
         # communication of all other agents
         comm = []
         other_pos = []
@@ -146,12 +147,16 @@ class Scenario(BaseScenario):
             if other.adversary:
                 comm.append(other.state.c)
             other_pos.append(other.state.p_pos - agent.state.p_pos)
+            # other_pos.append(np.array([22, 22]))
             if not other.adversary:
                 other_vel.append(other.state.p_vel)
+                # other_vel.append(np.array([33, 33]))
         if self.predators_comm:
             return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel + comm) # OREN
         else:
             return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+            # return np.concatenate([np.array([np.int(agent.name[-1]), np.int(agent.name[-1])])] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+
 
     # def observation(self, agent, world):
     #     # get positions of all entities in this agent's reference frame

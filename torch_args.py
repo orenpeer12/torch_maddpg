@@ -13,11 +13,11 @@ class Arglist:
         else:
             self.device = "cpu"
         self.num_landmarks = 2
-        self.num_prey = 2
+        self.num_prey = 1
         self.num_predators = 3
         self.env_id = "simple_tag"
         # self.env_id = "simple_speaker_listener"
-        self.model_name = "./2prey_thin_obs_space_local"
+        self.model_name = "./1prey_thin_obs_space"
         self.predators_comm = False
         self.predators_comm_size = 4    # each agent sends a 1-hot-vector in this size to all teammates.
         # self.seed = 1
