@@ -17,13 +17,14 @@ import gc
 
 if not sys.platform.startswith('win'):
     # from server
-    base_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model_comm/"
+    base_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/"
     path_to_summary = base_path + "logs/summary.json"
     path_to_rewards = base_path + "episodes_rewards.npy"
 
 else:
     # from local
-    base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model_2prey\\"
+    # base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\2prey_thin_obs_space\\"
+    base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
     path_to_summary = base_path + "logs\\summary.json"
     path_to_rewards = base_path + "run6\\episodes_rewards.npy"
 
@@ -109,7 +110,7 @@ if DISPLAY_MEAN_RUN_REWARDS:
 if SHOW_RUN:
     config = Arglist()
     env = make_parallel_env(config.env_id, config)
-    maddpg = MADDPG.init_from_save(config.load_model_path)
+    maddpg = MADDPG.init_from_save(base_path + "\\run6\model.pt" )
     # show some examples:
     for ep_i in range(0, 3):
         print("showing example number " + str(ep_i))

@@ -4,7 +4,7 @@ from gym.spaces import Box, Discrete
 from torch_utils.networks import MLPNetwork
 from torch_utils.misc import soft_update, average_gradients, onehot_from_logits, gumbel_softmax
 from torch_utils.agents import DDPGAgent
-import numpy as np
+
 MSELoss = torch.nn.MSELoss()
 
 class MADDPG(object):
@@ -60,13 +60,6 @@ class MADDPG(object):
     def target_policies(self):
         return [a.target_policy for a in self.agents]
 
-    def take_only_new_info(self, agent_idx, some_obs):
-        new_info_obs = [other_obs[:, 0:2] for i, other_obs in enumerate(some_obs) if
-                        i is not agent_idx and self.alg_types[i] is "MADDPG"]
-        # add them to the current agent observation
-        new_info_obs.append(some_obs[agent_idx])
-        return new_info_obs
-
     def scale_noise(self, scale):
         """
         Scale noise for each agent
@@ -116,12 +109,7 @@ class MADDPG(object):
             else:
                 all_trgt_acs = [pi(nobs) for pi, nobs in zip(self.target_policies,
                                                              next_obs)]
-            # trgt_vf_in = torch.cat((*next_obs, *all_trgt_acs), dim=1) # ORIGINAL
-
-            # take only the speeds of the *other* MADDPG agents.
-            new_info_next_obs = self.take_only_new_info(agent_i, next_obs)
-            trgt_vf_in = torch.cat((*new_info_next_obs, *all_trgt_acs), dim=1)  # Oren - take only NEW information from other agents (i.e. their speeds)
-
+            trgt_vf_in = torch.cat((*next_obs, *all_trgt_acs), dim=1)
         else:  # DDPG
             if self.discrete_action:
                 trgt_vf_in = torch.cat((next_obs[agent_i],
@@ -133,26 +121,21 @@ class MADDPG(object):
                 trgt_vf_in = torch.cat((next_obs[agent_i],
                                         curr_agent.target_policy(next_obs[agent_i])),
                                        dim=1)
-
         target_value = (rews[agent_i].view(-1, 1) + self.gamma *
                         curr_agent.target_critic(trgt_vf_in) *
                         (1 - dones[agent_i].view(-1, 1)))
 
         if self.alg_types[agent_i] == 'MADDPG':
-            # vf_in = torch.cat((*obs, *acs), dim=1) # original
-            # take %only% the speeds of the *other* MADDPG agents.
-            new_info_obs = self.take_only_new_info(agent_i, obs)
-            vf_in = torch.cat((*new_info_obs, *acs), dim=1) #  Oren - take only NEW information from other agents (i.e. their speeds)
+            vf_in = torch.cat((*obs, *acs), dim=1)
         else:  # DDPG
             vf_in = torch.cat((obs[agent_i], acs[agent_i]), dim=1)
             ##
-
         actual_value = curr_agent.critic(vf_in)
         vf_loss = MSELoss(actual_value, target_value.detach())
         vf_loss.backward()
         if parallel:
             average_gradients(curr_agent.critic)
-        torch.nn.utils.clip_grad_norm_(curr_agent.critic.parameters(), 0.5)
+        torch.nn.utils.clip_grad_norm(curr_agent.critic.parameters(), 0.5)
         curr_agent.critic_optimizer.step()
 
         curr_agent.policy_optimizer.zero_grad()
@@ -177,9 +160,7 @@ class MADDPG(object):
                     all_pol_acs.append(onehot_from_logits(pi(ob)))
                 else:
                     all_pol_acs.append(pi(ob))
-
-            new_info_obs = self.take_only_new_info(agent_i, obs)
-            vf_in = torch.cat((*new_info_obs, *all_pol_acs), dim=1)
+            vf_in = torch.cat((*obs, *all_pol_acs), dim=1)
         else:  # DDPG
             vf_in = torch.cat((obs[agent_i], curr_pol_vf_in),
                               dim=1)
@@ -256,25 +237,16 @@ class MADDPG(object):
         torch.save(save_dict, filename)
 
     @classmethod
-    def init_from_env(cls, env, config):
+    def init_from_env(cls, env, agent_alg="MADDPG", adversary_alg="MADDPG",
+                      gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64, device="cuda:0"):
         """
         Instantiate instance of this class from multi-agent environment
         """
-        agent_alg = config.agent_alg
-        adversary_alg = config.adversary_alg
-        gamma = config.gamma
-        tau = config.tau
-        lr = config.lr
-        hidden_dim = config.hidden_dim
-        device = config.device
-
         agent_init_params = []
         alg_types = [adversary_alg if atype == 'adversary' else agent_alg for
                      atype in env.agent_types]
-        # for acsp, obsp, algtype in zip(env.action_space, env.observation_space,
-        #                                alg_types)): # ORIG
-        for acsp, obsp, algtype, curr_agent in zip(env.action_space, env.observation_space,
-                                       alg_types, range(len(alg_types))):
+        for acsp, obsp, algtype in zip(env.action_space, env.observation_space,
+                                       alg_types):
             num_in_pol = obsp.shape[0]
             if isinstance(acsp, Box):
                 discrete_action = False
@@ -284,13 +256,9 @@ class MADDPG(object):
                 get_shape = lambda x: x.n
             num_out_pol = get_shape(acsp)
             if algtype == "MADDPG":
-                some_maddpg_agent_idx  = alg_types.index("MADDPG")
-                num_in_critic = env.observation_space[some_maddpg_agent_idx].shape[0]
-                # for oobsp in env.observation_space:
-                #     num_in_critic += oobsp.shape[0]
-                for i, oobsp in enumerate(env.observation_space): # OREN - share only meaningful info.
-                    if alg_types[i] is "MADDPG" and i is not curr_agent:
-                        num_in_critic += 2
+                num_in_critic = 0
+                for oobsp in env.observation_space:
+                    num_in_critic += oobsp.shape[0]
                 for oacsp in env.action_space:
                     num_in_critic += get_shape(oacsp)
             else:

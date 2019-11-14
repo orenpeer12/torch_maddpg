@@ -17,8 +17,8 @@ class Arglist:
         self.num_predators = 3
         self.env_id = "simple_tag"
         # self.env_id = "simple_speaker_listener"
-        self.model_name = "./playing"
-        self.predators_comm = True
+        self.model_name = "./2prey_thin_obs_space_local"
+        self.predators_comm = False
         self.predators_comm_size = 4    # each agent sends a 1-hot-vector in this size to all teammates.
         # self.seed = 1
         # self.seed = random.randint(0, 1e5)
@@ -30,7 +30,7 @@ class Arglist:
         self.episode_length = 25
         self.steps_per_update = 100
         self.batch_size = 1024
-        self.n_exploration_eps = 25000
+        self.n_exploration_eps = 25000  # this specify the
         self.init_noise_scale = 0.3
         self.final_noise_scale = 0.0
         self.save_interval = 1000
@@ -42,8 +42,8 @@ class Arglist:
         self.agent_alg = "DDPG"
         self.adversary_alg = "MADDPG" # choices=['MADDPG', 'DDPG']
         self.discrete_action = True
-        self.load_model_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\test_model_2prey\\run6\\model.pt"
-        # self.load_model_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model_2prey/run6/model.pt"
+        # self.load_model_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\results_predators\\test_model_max_not_min\\run0\\model.pt"
+        self.load_model_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model_2prey/run6/model.pt"
 
     def save(self, run_dir):
         text_file = open(run_dir / "arglist.txt", 'w')
