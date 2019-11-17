@@ -7,7 +7,7 @@ import copy
 class Arglist:
     def __init__(self):
         # self.USE_CUDA = torch.cuda.is_available()
-        self.comments = ""
+        self.comments = "start play with "
         self.USE_CUDA = False
         if self.USE_CUDA:
             self.device = "cuda:0"
@@ -18,9 +18,9 @@ class Arglist:
         self.num_predators = 3
         self.env_id = "simple_tag"
         # self.env_id = "simple_speaker_listener"
-        self.model_name = "./1prey_thin_obs_full_a"
-        self.predators_comm = False
-        self.predators_comm_size = 4    # each agent sends a 1-hot-vector in this size to all teammates.
+        self.model_name = "./play"
+        self.predators_comm = True
+        self.predators_comm_size = 4 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.n_rollout_threads = 1
         self.n_training_threads = 6
         self.buffer_length = int(1e6)

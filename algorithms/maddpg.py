@@ -13,7 +13,7 @@ class MADDPG(object):
     """
     def __init__(self, agent_init_params, alg_types,
                  gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64, device='cuda:0',
-                 discrete_action=False):
+                 discrete_action=False, agent_comm_size=0):
         """
         Inputs:
             agent_init_params (list of dict): List of dicts with parameters to
@@ -277,6 +277,7 @@ class MADDPG(object):
         #                                alg_types)): # ORIG
         for acsp, obsp, algtype, curr_agent in zip(env.action_space, env.observation_space,
                                        alg_types, range(len(alg_types))):
+
             num_in_pol = obsp.shape[0]
             if isinstance(acsp, Box):
                 discrete_action = False
@@ -284,13 +285,19 @@ class MADDPG(object):
             else:  # Discrete
                 discrete_action = True
                 get_shape = lambda x: x.n
-            num_out_pol = get_shape(acsp)
+
+            if config.predators_comm and algtype == "MADDPG":
+                num_out_pol = acsp['comm'].n + acsp['act'].n
+            else:
+                num_out_pol = get_shape(acsp)
+
             # if algtype == "MADDPG":
             #     num_in_critic = 0
             #     for oobsp in env.observation_space:
             #         num_in_critic += oobsp.shape[0]
             #     for oacsp in env.action_space:
             #         num_in_critic += get_shape(oacsp)
+
             if algtype == "MADDPG":
                 some_maddpg_agent_idx = alg_types.index("MADDPG")
                 num_in_critic = env.observation_space[some_maddpg_agent_idx].shape[0]
@@ -300,7 +307,10 @@ class MADDPG(object):
                     if alg_types[i] is "MADDPG" and i is not curr_agent:
                         num_in_critic += 2
                 for oacsp in env.action_space:
-                    num_in_critic += get_shape(oacsp)
+                    if isinstance(oacsp, dict):
+                        num_in_critic += oacsp['comm'].n + oacsp['act'].n
+                    else:
+                        num_in_critic += get_shape(oacsp)
             else:
                 num_in_critic = obsp.shape[0] + get_shape(acsp)
             agent_init_params.append({'num_in_pol': num_in_pol,
@@ -311,7 +321,8 @@ class MADDPG(object):
                      'alg_types': alg_types,
                      'agent_init_params': agent_init_params,
                      'discrete_action': discrete_action,
-                     'device': device}
+                     'device': device,
+                     'agent_comm_size': config.predators_comm_size}
         instance = cls(**init_dict)
         instance.init_dict = init_dict
         return instance

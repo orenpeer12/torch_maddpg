@@ -3,7 +3,7 @@ import torch
 import time
 import os, sys, gc
 import numpy as np
-from gym.spaces import Box, Discrete
+from gym.spaces import Box, Discrete, MultiDiscrete
 from pathlib import Path
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
@@ -48,15 +48,20 @@ if __name__ == '__main__':
             config.print_args()
             logger = SummaryWriter(str(log_dir))
 
-            # torch.manual_seed(config.seed)
-            # np.random.seed(config.seed)
             if not config.USE_CUDA:
                 torch.set_num_threads(config.n_training_threads)
             env = make_parallel_env(config.env_id, config)
+            # add comm to action space:
+            if config.predators_comm:
+                for i, a_type in enumerate(env.agent_types):
+                    if a_type is "adversary":
+                        env.action_space[i] = \
+                            {'act': env.action_space[i], 'comm' : Discrete(config.predators_comm_size)}
+
             maddpg = MADDPG.init_from_env(env, config)
             replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
                                          [obsp.shape[0] for obsp in env.observation_space],
-                                         [acsp.shape[0] if isinstance(acsp, Box) else acsp.n
+                                         [acsp['comm'].n + acsp['act'].n if isinstance(acsp, dict) else acsp.n
                                           for acsp in env.action_space])
             t = 0
             # reset test results arrays

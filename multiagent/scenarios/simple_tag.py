@@ -152,10 +152,17 @@ class Scenario(BaseScenario):
                 other_vel.append(other.state.p_vel)
                 # other_vel.append(np.array([33, 33]))
         if self.predators_comm:
-            return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel + comm) # OREN
+            if agent.adversary:
+                return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos +
+                                  other_vel + comm)     # OREN
+            else:
+                return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+
         else:
             return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
-            # return np.concatenate([np.array([np.int(agent.name[-1]), np.int(agent.name[-1])])] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+            # return np.concatenate([np.array([np.int(agent.name[-1]), np.int(agent.name[-1])])] +
+            #                       [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+
 
 
     # def observation(self, agent, world):
