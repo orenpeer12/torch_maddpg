@@ -17,7 +17,7 @@ class Arglist:
         self.num_predators = 3
         self.env_id = "simple_tag"
         # self.env_id = "simple_speaker_listener"
-        self.model_name = "./1prey_thin_obs_space"
+        self.model_name = "./1prey_thin_obs_full_a"
         self.predators_comm = False
         self.predators_comm_size = 4    # each agent sends a 1-hot-vector in this size to all teammates.
         # self.seed = 1
@@ -43,7 +43,7 @@ class Arglist:
         self.adversary_alg = "MADDPG" # choices=['MADDPG', 'DDPG']
         self.discrete_action = True
         # self.load_model_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\results_predators\\test_model_max_not_min\\run0\\model.pt"
-        self.load_model_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/test_model_2prey/run6/model.pt"
+        self.load_model_path = "/home/oren/PycharmProjects/torch_maddpg/models/simple_tag/1prey_thin_obs_full_a/run2/model.pt"
 
     def save(self, run_dir):
         text_file = open(run_dir / "arglist.txt", 'w')

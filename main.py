@@ -94,7 +94,7 @@ if __name__ == '__main__':
                     obs = next_obs
                     t += config.n_rollout_threads
                     if (len(replay_buffer) >= config.batch_size and
-                        (t % config.steps_per_update) < config.n_rollout_threads):
+                            (t % config.steps_per_update) < config.n_rollout_threads):
 
                         maddpg.prep_training(device=config.device)
 
@@ -113,10 +113,10 @@ if __name__ == '__main__':
                 for a_i, a_ep_rew in enumerate(ep_rews):
                     logger.add_scalar('agent%i/mean_episode_rewards' % a_i, a_ep_rew, ep_i)
 
-                if ep_i % config.save_interval < config.n_rollout_threads:
-                    os.makedirs(run_dir / 'incremental', exist_ok=True)
-                    maddpg.save(run_dir / 'incremental' / ('model_ep%i.pt' % (ep_i + 1)))
-                    maddpg.save(run_dir / 'model.pt')
+                # if ep_i % config.save_interval < config.n_rollout_threads:
+                #     os.makedirs(run_dir / 'incremental', exist_ok=True)
+                #     maddpg.save(run_dir / 'incremental' / ('model_ep%i.pt' % (ep_i + 1)))
+                #     maddpg.save(run_dir / 'model.pt')
 
             np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards.copy(),
                                                    "mean_ep_rewards": mean_ep_rewards.copy()}, True)

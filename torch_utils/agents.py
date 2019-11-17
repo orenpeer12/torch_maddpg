@@ -73,7 +73,6 @@ class DDPGAgent(object):
         Outputs:
             action (PyTorch Variable): Actions for this agent
         """
-        # obs.to(self.device)
         action = self.policy(obs).to(self.device)
         if self.discrete_action:
             if explore:

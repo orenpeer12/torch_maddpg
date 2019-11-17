@@ -23,19 +23,19 @@ if not sys.platform.startswith('win'):
 
 else:
     # from local
-    base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\1prey_thin_obs_space\\"
+    base_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\1prey_thin_obs_full_a\\"
     # base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
     path_to_summary = base_path + "logs\\summary.json"
-    path_to_rewards = base_path + "run6\\episodes_rewards.npy"
+    path_to_rewards = base_path + "run2\\episodes_rewards.npy"
 
 
 CLEANUP = False
 DISPLAY_LOSS = False
 DISPLAY_SINGLE_RUN_REWARDS = False
-DISPLAY_MEAN_RUN_REWARDS = False
+DISPLAY_MEAN_RUN_REWARDS = True
 SHOW_RUN = True
 
-num_agents = 5
+num_agents = 4
 
 if DISPLAY_LOSS:
     # show loss funcs:
@@ -79,8 +79,8 @@ if DISPLAY_MEAN_RUN_REWARDS:
         mean_ep_rewards = np.vstack(rewards_data["mean_ep_rewards"])
         if first:
             num_episodes = len(mean_ep_rewards)
-            mean_reward_per_episode = np.zeros((num_episodes, 5))
-            tot_reward_per_episode = np.zeros((num_episodes, 5))
+            mean_reward_per_episode = np.zeros((num_episodes, num_agents))
+            tot_reward_per_episode = np.zeros((num_episodes, num_agents))
             first = False
 
         tot_reward_per_episode += tot_ep_rewards
@@ -110,7 +110,7 @@ if DISPLAY_MEAN_RUN_REWARDS:
 if SHOW_RUN:
     config = Arglist()
     env = make_parallel_env(config.env_id, config)
-    maddpg = MADDPG.init_from_save(base_path + "\\run0\model.pt" )
+    maddpg = MADDPG.init_from_save(base_path + "run3\model.pt" )
     # show some examples:
     for ep_i in range(0, 3):
         print("showing example number " + str(ep_i))

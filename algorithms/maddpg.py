@@ -142,7 +142,7 @@ class MADDPG(object):
             # vf_in = torch.cat((*obs, *acs), dim=1) # original
             # take %only% the speeds of the *other* MADDPG agents.
             new_info_obs = self.take_only_new_info(agent_i, obs)
-            vf_in = torch.cat((*new_info_obs, *acs), dim=1) #  Oren - take only NEW information from other agents (i.e. their speeds)
+            vf_in = torch.cat((*new_info_obs, *acs), dim=1)     # Oren - take only NEW information from other agents (i.e. their speeds)
         else:  # DDPG
             vf_in = torch.cat((obs[agent_i], acs[agent_i]), dim=1)
             ##
@@ -180,6 +180,8 @@ class MADDPG(object):
 
             new_info_obs = self.take_only_new_info(agent_i, obs)
             vf_in = torch.cat((*new_info_obs, *all_pol_acs), dim=1)
+            # vf_in = torch.cat((*obs, *all_pol_acs), dim=1)
+
         else:  # DDPG
             vf_in = torch.cat((obs[agent_i], curr_pol_vf_in),
                               dim=1)
@@ -283,12 +285,18 @@ class MADDPG(object):
                 discrete_action = True
                 get_shape = lambda x: x.n
             num_out_pol = get_shape(acsp)
+            # if algtype == "MADDPG":
+            #     num_in_critic = 0
+            #     for oobsp in env.observation_space:
+            #         num_in_critic += oobsp.shape[0]
+            #     for oacsp in env.action_space:
+            #         num_in_critic += get_shape(oacsp)
             if algtype == "MADDPG":
-                some_maddpg_agent_idx  = alg_types.index("MADDPG")
+                some_maddpg_agent_idx = alg_types.index("MADDPG")
                 num_in_critic = env.observation_space[some_maddpg_agent_idx].shape[0]
                 # for oobsp in env.observation_space:
                 #     num_in_critic += oobsp.shape[0]
-                for i, oobsp in enumerate(env.observation_space): # OREN - share only meaningful info.
+                for i, oobsp in enumerate(env.observation_space):  # OREN - share only meaningful info.
                     if alg_types[i] is "MADDPG" and i is not curr_agent:
                         num_in_critic += 2
                 for oacsp in env.action_space:
