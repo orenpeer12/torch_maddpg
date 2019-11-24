@@ -6,6 +6,7 @@ from .networks import MLPNetwork
 from .misc import hard_update, gumbel_softmax, onehot_from_logits
 from .noise import OUNoise
 import torch.nn as nn
+import numpy as np
 
 class DDPGAgent(object):
     """
@@ -13,7 +14,7 @@ class DDPGAgent(object):
     critic, exploration noise)
     """
     def __init__(self, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
-                 lr=0.01, discrete_action=True, device="cuda:0", agent_comm_size=0):
+                 lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=False):
         """
         Inputs:
             num_in_pol (int): number of dimensions for policy input
@@ -22,7 +23,8 @@ class DDPGAgent(object):
         """
         self.device = device
         # self.device = "cpu"
-
+        self.comm = comm
+        self.comm_size = comm_size
         self.policy = MLPNetwork(num_in_pol, num_out_pol,
                                  hidden_dim=hidden_dim,
                                  constrain_out=True,
@@ -76,13 +78,18 @@ class DDPGAgent(object):
         action = self.policy(obs).to(self.device)
         if self.discrete_action:
             if explore:
-                action = gumbel_softmax(action, hard=True)
+                if self.comm:
+                    action = torch.cat([gumbel_softmax(action[:, :-self.comm_size], hard=True),
+                                        gumbel_softmax(action[:, self.comm_size + 1:], hard=True)], axis=1)
+                else:
+                    action = gumbel_softmax(action, hard=True)
             else:
                 action = onehot_from_logits(action)
         else:  # continuous action
             if explore:
-                action += Variable(Tensor(self.exploration.noise()),
-                                   requires_grad=False)
+                if self.comm:
+                    action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()),
+                                       requires_grad=False)[:2]
             action = action.clamp(-1, 1)
         return action
 
@@ -101,3 +108,88 @@ class DDPGAgent(object):
         self.target_critic.load_state_dict(params['target_critic'])
         self.policy_optimizer.load_state_dict(params['policy_optimizer'])
         self.critic_optimizer.load_state_dict(params['critic_optimizer'])
+
+
+class Prey_Controller(object):
+    def __init__(self, controller_radius=0.01, discrete_action=True, num_predators=3, num_obstacles=2):
+        self.controller_radius = controller_radius
+        self.num_predators = num_predators
+        self.num_obstacles = num_obstacles
+        self.discrete_action = discrete_action
+        self.policy = self.target_policy = self.step
+        # just to specify it has no learning capabilities...
+        self.controller = True
+        return
+
+    def reset_noise(self):
+        return
+
+    def scale_noise(self, scale):
+        return
+
+    def step(self, obs, explore=False):
+        # thin_obs = obs.reshape((obs.shape[-1]))
+        self_loc = obs[:, 2:4]
+        predators_loc = obs[:, 4 + self.num_obstacles*2: 4 + self.num_obstacles*2 + self.num_predators*2]
+        predators_loc = predators_loc.reshape((obs.shape[0], self.num_predators, 2))
+        direction_away_from_predatores = self_loc.unsqueeze(1) - predators_loc
+        dists = torch.norm(direction_away_from_predatores, dim=2).unsqueeze(-1)
+        # nearby_idx = (dists < self.controller_radius)
+
+        if not self.discrete_action:
+            return (direction_away_from_predatores / dists + 0.01).mean(dim=1).clamp(-1, 1)
+
+            # Next code is not working and tries to run away from nearby predatores...
+            # action = 2 * torch.rand_like(self_loc) - 1
+            #
+            # if nearby_idx.shape[0] is not 0:
+            #     nearby_loc = predators_loc[nearby_idx[:, 0], nearby_idx[:, 1]]
+            #     act_dir = (self_loc[nearby_idx[0][0], :] - nearby_loc).mean(dim=-1)
+            #     act_dir /= torch.norm(act_dir, dim=-1)
+            #     action[nearby_idx[:, 0]] = act_dir
+            # return action
+
+        elif self.discrete_action:
+            if nearby_idx.shape[0] is 0:
+                action = torch.zeros(size=(obs.shape[0], 5), requires_grad=False)
+                action[0, torch.randint(low=0, high=5, size=(1,))] = 1
+                return action
+            else:
+                pass    # TODO: add support to descrete actions!!
+
+    # def step(self, obs, explore=False): # SLOW!
+    #     if type(obs) is np.ndarray:
+    #         obs = torch.Tensor(obs)
+    #     thin_obs = obs.reshape((obs.shape[-1]))
+    #     self_loc = thin_obs[:,2:4]
+    #     predators_loc = thin_obs[4 + self.num_obstacles*2: 4 + self.num_obstacles*2 + self.num_predators*2]
+    #     predators_loc = predators_loc.reshape((self.num_predators, 2))
+    #     dists = torch.norm(self_loc - predators_loc, dim=1)
+    #     nearby_idx = (dists < self.escape_radius).nonzero()[:,0]
+    #     if nearby_idx.shape[0] is 0:
+    #         if self.discrete_action:
+    #             action = torch.zeros(size=(1,5), requires_grad=False)
+    #             action[0, torch.randint(low=0, high=5, size=(1,))] = 1
+    #             return action
+    #         else:
+    #             return 2 * torch.rand((1, 2)) - 1
+    #     else:
+    #         act_dir = torch.zeros((1, 2))
+    #         nearby_loc = predators_loc[nearby_idx, :]
+    #         act_dir[0, :] = (self_loc - nearby_loc).mean(dim=0)
+    #         act_dir /= torch.norm(act_dir)
+    #         if not self.discrete_action:
+    #             return act_dir
+    #         else:
+    #             # TODO: add support to descrete actions!!
+    #             pass
+    #             # if action[0] > 0:
+    #             #     if action[1] >0:
+    #             #         return
+    #     return action
+
+    def get_params(self):
+        return
+
+    def load_params(self, params):
+        return

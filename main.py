@@ -1,4 +1,3 @@
-import argparse
 import torch
 import time
 import os, sys, gc
@@ -12,7 +11,7 @@ from torch_utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
 
-# 17/11/19 15:00
+# 20/11/19 14:00
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
@@ -50,19 +49,23 @@ if __name__ == '__main__':
 
             if not config.USE_CUDA:
                 torch.set_num_threads(config.n_training_threads)
-            env = make_parallel_env(config.env_id, config)
+            env = make_parallel_env(config)
             # add comm to action space:
-            if config.predators_comm:
-                for i, a_type in enumerate(env.agent_types):
-                    if a_type is "adversary":
-                        env.action_space[i] = \
-                            {'act': env.action_space[i], 'comm' : Discrete(config.predators_comm_size)}
+            for i, a_type in enumerate(env.agent_types):
+                if a_type is "adversary":
+                    env.action_space[i] = \
+                        {'act': env.action_space[i], 'comm' : Discrete(config.predators_comm_size)}
+                else:
+                    env.action_space[i] =\
+                        {'act': env.action_space[i], 'comm' : Discrete(0)}
 
             maddpg = MADDPG.init_from_env(env, config)
             replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
                                          [obsp.shape[0] for obsp in env.observation_space],
-                                         [acsp['comm'].n + acsp['act'].n if isinstance(acsp, dict) else acsp.n
+                                         [acsp['comm'].n + acsp['act'].n if config.discrete_action else acsp['comm'].n + acsp['act'].shape[0]
                                           for acsp in env.action_space])
+                                         # [acsp['comm'].n + acsp['act'].n if isinstance(acsp, dict) else acsp.n
+                                         #  for acsp in env.action_space])
             t = 0
             # reset test results arrays
             all_ep_rewards = []
@@ -82,6 +85,9 @@ if __name__ == '__main__':
                 maddpg.reset_noise()
 
                 for et_i in range(config.episode_length):
+                    # if ep_i > 1000:
+                    #     env.env._render("human", False)
+                    #     time.sleep(0.1)
                     # rearrange observations to be per agent, and convert to torch Variable
                     torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
                                           requires_grad=False)

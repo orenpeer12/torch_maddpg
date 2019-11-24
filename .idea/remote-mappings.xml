@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteMappingsManager">
+    <list>
+      <list>
+        <remote-mappings server-id="python@sftp://ron@132.68.55.75:22/home/ron/anaconda3/bin/python3.7">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/home/ron/PycharmProjects/tmp_oren_hamelech" />
+            </list>
+          </settings>
+        </remote-mappings>
+        <remote-mappings server-id="python@sftp://ron@132.68.55.75:22/home/ron/anaconda3/envs/oren_env/bin/python3.7">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/home/ron/PycharmProjects/tmp_oren_hamelech" />
+            </list>
+          </settings>
+        </remote-mappings>
+        <remote-mappings server-id="python@sftp://oren@132.68.57.25:22/home/oren/anaconda3/bin/python3.7">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/home/oren/PycharmProjects/torch_maddpg" />
+            </list>
+          </settings>
+        </remote-mappings>
+      </list>
+    </list>
+  </component>
+</project>

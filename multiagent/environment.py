@@ -13,8 +13,10 @@ class MultiAgentEnv(gym.Env):
     def __init__(self, world, reset_callback=None, reward_callback=None,
                  observation_callback=None, info_callback=None,
                  done_callback=None, post_step_callback=None,
-                 shared_viewer=True, discrete_action=False):
+                 shared_viewer=True, discrete_action=False, config=None):
 
+        self.predators_comm = config.predators_comm
+        self.predators_comm_size = config.predators_comm_size
         self.world = world
         self.agents = self.world.policy_agents
         # set required vectorized gym env property
@@ -153,6 +155,7 @@ class MultiAgentEnv(gym.Env):
         agent.action.u = np.zeros(self.world.dim_p)
         agent.action.c = np.zeros(self.world.dim_c)
         # process action
+
         if isinstance(action_space, spaces.MultiDiscrete):
             act = []
             size = action_space.high - action_space.low + 1
@@ -162,7 +165,11 @@ class MultiAgentEnv(gym.Env):
                 index += s
             action = act
         else:
-            action = [action]
+            act = action[:action_space['act'].n] if self.discrete_action_space else action[:action_space['act'].shape[0]]
+            comm = action[-action_space['comm'].n:] if action_space['comm'].n > 0 else None
+            action = [act]
+            # action = [action]
+            agent.action.c = comm
 
         if agent.movable:
             # physical action

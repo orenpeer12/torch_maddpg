@@ -39,11 +39,11 @@ def make_env(scenario_name, config, benchmark=False, discrete_action=False):
     # create multiagent environment
     if benchmark:        
         env = MultiAgentEnv(world, scenario.reset_world, scenario.reward,
-                            scenario.observation, scenario.benchmark_data,
+                            scenario.observation, scenario.benchmark_data, config=config,
                             discrete_action=discrete_action)
     else:
         env = MultiAgentEnv(world, scenario.reset_world, scenario.reward,
-                            scenario.observation,
+                            scenario.observation, config=config,
                             discrete_action=discrete_action)
     return env
 
@@ -51,11 +51,11 @@ def make_env(scenario_name, config, benchmark=False, discrete_action=False):
 from torch_utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 import numpy as np
 
-def make_parallel_env(env_id, config):
+def make_parallel_env(config):
 
     def get_env_fn(config):
         def init_env(config):
-            env = make_env(env_id, config, discrete_action=config.discrete_action)
+            env = make_env(config.env_id, config, discrete_action=config.discrete_action)
             # env.seed(seed + rank * 1000)
             # np.random.seed(seed + rank * 1000)
             return env

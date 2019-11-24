@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .misc import hard_update, gumbel_softmax, onehot_from_logits
@@ -30,7 +31,7 @@ class MLPNetwork(nn.Module):
         if constrain_out and not discrete_action:
             # initialize small to prevent saturation
             self.fc3.weight.data.uniform_(-3e-3, 3e-3)
-            self.out_fn = F.tanh
+            self.out_fn = torch.tanh
         else:  # logits for discrete action (will softmax later)
             self.out_fn = lambda x: x
 

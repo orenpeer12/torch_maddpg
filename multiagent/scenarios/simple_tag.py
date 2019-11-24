@@ -5,6 +5,7 @@ from multiagent.scenario import BaseScenario
 
 class Scenario(BaseScenario):
     def make_world(self, config):
+        self.shaping = config.shaping
         self.predators_comm = config.predators_comm
         world = World()
         # set any world properties first
@@ -25,9 +26,11 @@ class Scenario(BaseScenario):
             #     agent.silent = True
             agent.silent = True
             agent.size = 0.075 if agent.adversary else 0.05
-            agent.accel = 3.0 if agent.adversary else 4.0
+            # agent.accel = 3.0 if agent.adversary else 4.0
+            agent.accel = 3.0 if agent.adversary else 2.0
             #agent.accel = 20.0 if agent.adversary else 25.0
-            agent.max_speed = 1.0 if agent.adversary else 1.3
+            # agent.max_speed = 1.0 if agent.adversary else 1.3
+            agent.max_speed = 1.0 if agent.adversary else 0.5
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
@@ -90,7 +93,8 @@ class Scenario(BaseScenario):
     def agent_reward(self, agent, world):
         # Agents are negatively rewarded if caught by adversaries
         rew = 0
-        shape = False
+        shape = self.shaping
+        # print(self.shaping)
         adversaries = self.adversaries(world)
         if shape:  # reward can optionally be shaped (increased reward for increased distance from adversary)
             for adv in adversaries:
@@ -116,7 +120,8 @@ class Scenario(BaseScenario):
     def adversary_reward(self, agent, world):
         # Adversaries are rewarded for collisions with agents
         rew = 0
-        shape = False
+        shape = self.shaping
+        # print(self.shaping)
         agents = self.good_agents(world)
         adversaries = self.adversaries(world)
         if shape:  # reward can optionally be shaped (decreased reward for increased distance from agents)
