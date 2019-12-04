@@ -14,7 +14,7 @@ class DDPGAgent(object):
     critic, exploration noise)
     """
     def __init__(self, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
-                 lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=False):
+                 lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=False, symbolic_comm=True):
         """
         Inputs:
             num_in_pol (int): number of dimensions for policy input
@@ -25,6 +25,7 @@ class DDPGAgent(object):
         # self.device = "cpu"
         self.comm = comm
         self.comm_size = comm_size
+        self.symbolic_comm = symbolic_comm
         self.policy = MLPNetwork(num_in_pol, num_out_pol,
                                  hidden_dim=hidden_dim,
                                  constrain_out=True,
@@ -90,7 +91,7 @@ class DDPGAgent(object):
                 if self.comm:
                     action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()),
                                        requires_grad=False)[:2]
-            action = action.clamp(-1, 1)
+            action[:, :-self.comm_size] = action[:, :-self.comm_size].clamp(-1, 1)
         return action
 
     def get_params(self):
@@ -129,15 +130,16 @@ class Prey_Controller(object):
 
     def step(self, obs, explore=False):
         # thin_obs = obs.reshape((obs.shape[-1]))
-        self_loc = obs[:, 2:4]
+        # self_loc = obs[:, 2:4]
         predators_loc = obs[:, 4 + self.num_obstacles*2: 4 + self.num_obstacles*2 + self.num_predators*2]
         predators_loc = predators_loc.reshape((obs.shape[0], self.num_predators, 2))
-        direction_away_from_predatores = self_loc.unsqueeze(1) - predators_loc
+        direction_away_from_predatores = - predators_loc
         dists = torch.norm(direction_away_from_predatores, dim=2).unsqueeze(-1)
         # nearby_idx = (dists < self.controller_radius)
 
         if not self.discrete_action:
-            return (direction_away_from_predatores / dists + 0.01).mean(dim=1).clamp(-1, 1)
+            return (direction_away_from_predatores / (dists + 0.01)).mean(dim=1).clamp(-1, 1)
+            # return direction_away_from_predatores.mean(dim=1).clamp(-1, 1)
 
             # Next code is not working and tries to run away from nearby predatores...
             # action = 2 * torch.rand_like(self_loc) - 1

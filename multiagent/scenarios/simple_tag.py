@@ -26,11 +26,12 @@ class Scenario(BaseScenario):
             #     agent.silent = True
             agent.silent = True
             agent.size = 0.075 if agent.adversary else 0.05
-            # agent.accel = 3.0 if agent.adversary else 4.0
-            agent.accel = 3.0 if agent.adversary else 2.0
-            #agent.accel = 20.0 if agent.adversary else 25.0
-            # agent.max_speed = 1.0 if agent.adversary else 1.3
-            agent.max_speed = 1.0 if agent.adversary else 0.5
+            # agent.accel = 3.0 if agent.adversary else 2.0
+            # agent.max_speed = 1.0 if agent.adversary else 0.5
+
+            agent.accel = config.pred_acc if agent.adversary else config.prey_acc
+            agent.max_speed = config.pred_max_speed if agent.adversary else config.prey_max_speed
+
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
@@ -46,7 +47,7 @@ class Scenario(BaseScenario):
     def reset_world(self, world):
         # random properties for agents
         for i, agent in enumerate(world.agents):
-            agent.color = np.array([0.35, 0.85, 0.35]) if not agent.adversary else np.array([0.85, 0.35, 0.35])
+            agent.color = np.array([0.35 + 0.3 * int( agent.name[-1]), 0.85, 0.35]) if not agent.adversary else np.array([0.85, 0.35, 0.35])
             # random properties for landmarks
         for i, landmark in enumerate(world.landmarks):
             landmark.color = np.array([0.25, 0.25, 0.25])
@@ -126,10 +127,12 @@ class Scenario(BaseScenario):
         adversaries = self.adversaries(world)
         if shape:  # reward can optionally be shaped (decreased reward for increased distance from agents)
             for adv in adversaries:
-                rew -= 0.1 * min([np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos))) for a in agents])
-                # rew -= 0.1 * max([np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos))) for a in agents])
+                rew -= 0.1 * sum([np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos))) for a in agents])
+                # rew -= 0.1 * min([np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos))) for a in agents])
         if agent.collide:
             for ag in agents:
+                # if ag.name == "agent 1":  ###
+                #     continue        ###
                 for adv in adversaries:
                     if self.is_collision(ag, adv):
                         rew += 10

@@ -9,14 +9,14 @@ import os, shutil
 import torch
 import time
 import numpy as np
-from torch_utils.make_env import make_parallel_env
+from utils.make_env import make_parallel_env
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
 from torch.autograd import Variable
 import gc
 from gym.spaces import Discrete
 from pathlib import Path
-
+from utils.my_plotting import *
 
 if not sys.platform.startswith('win'):
     # from server
@@ -25,52 +25,49 @@ if not sys.platform.startswith('win'):
 
 else:
     # from local
-    base_path = Path("C:\\git\\results_predators\\")
+    # base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline1")
     base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     # base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
     path_to_summary = base_path / "logs\\summary.json"
 
 
 CLEANUP = False
-DISPLAY_LOSS = False
-DISPLAY_SINGLE_RUN_REWARDS = False
+# DISPLAY_LOSS = False
+
 DISPLAY_MEAN_RUN_REWARDS = True
-SHOW_RUN = True
+SHOW_RUN = False
+SMOOTH = True
 
-# models_to_compare = \
-    # ['1prey_thin_obs_space', '1prey_thinObs_critic_comm_noShaping', '1prey_thinObs_critic_comm_withShaping',
-    #  "1prey_thinObs_critic_comm_withShaping_cont_act"]
-models_to_compare = ["2prey_thin_obs_space", "2prey_thinObs_critic_comm_withShaping", "2prey_thinObs_critic_comm_withShaping_cont_act"]
-# models_to_compare = ["test_model_baseline_1prey", "1prey_thin_obs_space"]
-models_to_compare = ["1prey_contAct_thinObs_noCom"]
+models_to_compare = ["play1"]
+# models_to_compare = ["1prey_1pred_noCom_noShape_noLand_LONG",
+#                      "1prey_1pred_noCom_sumShape_noLand_LONG",
+#                      "2prey_1pred_noCom_minShape_noLand_LONG",
+#                      "2prey_1pred_noCom_noShape_noLand_LONG",
+#                      "2prey_1pred_noCom_sumShape_noLand_LONG"
+#                      ]
 
-num_agents = 4
+num_agents = 5
 
-if DISPLAY_LOSS:
-    # show loss funcs:
-    with open(path_to_summary) as json_file:
-        data = json.load(json_file)
-    # data.keys()
-    for loss in data.keys():
-        plt.figure(loss)
-        plt.plot([ep_loss[2] for ep_loss in data[loss]])
-        plt.show()
 
 if DISPLAY_MEAN_RUN_REWARDS:
     plt.figure("Predators")
     plt.title("Predators total episodic reward average across runs")
     plt.xlabel("Optimizer steps")
-    plt.figure("Prey")
-    plt.title("Prey total episodic reward average across runs")
-    plt.xlabel("Optimizer steps")
+    # plt.figure("Prey")
+    # plt.title("Prey total episodic reward average across runs")
+    # plt.xlabel("Optimizer steps")
 
-    for model in models_to_compare:
+    # for model, num_agents in zip(models_to_compare, [2,2,3,3,3]):
+    for model, num_agents in zip(models_to_compare, [2]):
         mean_reward_per_episode = []    # the mean reward of each agent each episode
         tot_reward_per_episode = []     # the tot cumulative reward of each agent each episode.
         runs = os.listdir(base_path / model)
-        # runs = [run for run in runs if run.startswith('run')]
-        runs = [[run for run in runs if run.startswith('run')][0]]
+        runs = [[run for run in runs if run.startswith('run')][-1]]
         num_runs = len(runs)
+
+        arguments = Arglist()
+        # num_agents = arguments.num_predators + arguments.num_prey
+
         first = True
         for run in runs:
             gc.collect()
@@ -90,25 +87,33 @@ if DISPLAY_MEAN_RUN_REWARDS:
 
         gc.collect()
 
-        for agent, agent_type in zip([0, 3], ["Predators", "Prey"]):
-            agent_tot_ep_rewards = tot_reward_per_episode[:, agent]
-            agent_mean_ep_rewards = mean_reward_per_episode[:, agent]
-            tot_ep_rew_mean_across_optim_step = []
-            mean_ep_rew_mean_across_optim_step = []
-            for i in range(0, 14999, 4):
-                tot_ep_rew_mean_across_optim_step.append(agent_tot_ep_rewards[i:i + 4].mean())
-                mean_ep_rew_mean_across_optim_step.append(agent_mean_ep_rewards[i:i + 4].mean())
-            plt.figure(agent_type)
-            plt.plot(tot_ep_rew_mean_across_optim_step)
-
+        # for agent, agent_type in zip([0, 1], ["Predators", "Prey"]):
+        agent = 0
+        agent_type = "Predators"
+        agent_tot_ep_rewards = tot_reward_per_episode[:, agent]
+        agent_mean_ep_rewards = mean_reward_per_episode[:, agent]
+        tot_ep_rew_mean_across_optim_step = []
+        mean_ep_rew_mean_across_optim_step = []
+        for i in range(0, agent_tot_ep_rewards.shape[0] - 1, 4):
+            tot_ep_rew_mean_across_optim_step.append(agent_tot_ep_rewards[i:i + 4].mean())
+            mean_ep_rew_mean_across_optim_step.append(agent_mean_ep_rewards[i:i + 4].mean())
+        plt.figure(agent_type)
+        if SMOOTH: tot_ep_rew_mean_across_optim_step = smooth(tot_ep_rew_mean_across_optim_step)
+        plt.plot(tot_ep_rew_mean_across_optim_step, linewidth=0.5)
+        ##
             # plt.plot(mean_ep_rew_mean_across_optim_step)
-    for model in ["Predators", "Prey"]:
-        plt.figure(model)
-        plt.legend(models_to_compare)
+    # for model in ["Predators", "Prey"]:
+    #     plt.figure(model)
+    plt.legend([m.replace("_contAct_thinObs", "").replace("agent", "prey") for m in models_to_compare])
     plt.show()
+    # set_default_mpl()
 
 if SHOW_RUN:
     config = Arglist()
+    model_path = base_path / models_to_compare[0] / "run4" / "model.pt"
+    print(model_path)
+    # config = config.load_args(model_path.__str__().replace("model.pt", "arglist.pkl"))
+    config.load_model_path = model_path._str
     env = make_parallel_env(config)
     # add comm to action space:
     for i, a_type in enumerate(env.agent_types):
@@ -119,15 +124,15 @@ if SHOW_RUN:
             env.action_space[i] = \
                 {'act': env.action_space[i], 'comm': Discrete(0)}
 
-    maddpg = MADDPG.init_from_save(base_path /"2prey_contAct_thinObs_noCom" / "run0\model.pt" )
+    maddpg = MADDPG.init_from_save(config.load_model_path)
     # show some examples:
-    for ep_i in range(0, 3):
+    for ep_i in range(0, 5):
         print("showing example number " + str(ep_i))
         obs = env.reset()
         maddpg.prep_rollouts(device='cpu')
         for et_i in range(100):
             env.env._render("human", False)
-            time.sleep(0.1)
+            time.sleep(0.05)
             # rearrange observations to be per agent, and convert to torch Variable
             torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
                                   requires_grad=False)
@@ -152,3 +157,13 @@ if CLEANUP:
         if sub_folder.startswith('run'):
             if os.path.exists(base_path + sub_folder + "\\incremental"):
                 shutil.rmtree(base_path + sub_folder + "\\incremental")
+
+# if DISPLAY_LOSS:
+#     # show loss funcs:
+#     with open(path_to_summary) as json_file:
+#         data = json.load(json_file)
+#     # data.keys()
+#     for loss in data.keys():
+#         plt.figure(loss)
+#         plt.plot([ep_loss[2] for ep_loss in data[loss]])
+#         plt.show()

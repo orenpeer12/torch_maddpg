@@ -1,9 +1,9 @@
 import torch
 import torch.nn.functional as F
 from gym.spaces import Box, Discrete
-from torch_utils.networks import MLPNetwork
-from torch_utils.misc import soft_update, average_gradients, onehot_from_logits, gumbel_softmax
-from torch_utils.agents import DDPGAgent, Prey_Controller
+from utils.networks import MLPNetwork
+from utils.misc import soft_update, average_gradients, onehot_from_logits, gumbel_softmax
+from utils.agents import DDPGAgent, Prey_Controller
 import numpy as np
 MSELoss = torch.nn.MSELoss()
 
@@ -13,7 +13,7 @@ class MADDPG(object):
     """
     def __init__(self, agent_init_params, alg_types,
                  gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64, device='cuda:0',
-                 discrete_action=False, predators_comm=False, predators_comm_size=0):
+                 discrete_action=False, predators_comm=False, predators_comm_size=0, symbolic_comm=False):
         """
         Inputs:
             agent_init_params (list of dict): List of dicts with parameters to
@@ -31,14 +31,15 @@ class MADDPG(object):
         """
         self.predators_comm = predators_comm
         self.predators_comm_size = predators_comm_size
+        self.symbolic_comm = symbolic_comm
         self.nagents = len(alg_types)
         self.alg_types = alg_types
         self.agents = []
-        for i, params in enumerate(agent_init_params):
-            if alg_types[i] in ["MADDPG", "DDPG"]:
+        for ag_i, params in enumerate(agent_init_params):
+            if alg_types[ag_i] in ["MADDPG", "DDPG"]:
                 self.agents.append(DDPGAgent(lr=lr, discrete_action=discrete_action,
                                              hidden_dim=hidden_dim, device=device,
-                                             comm=predators_comm if alg_types[i] is 'MADDPG' else False,
+                                             comm=predators_comm if alg_types[ag_i] is 'MADDPG' else False,
                                              comm_size=predators_comm_size, **params))
             else:
                 self.agents.append(Prey_Controller(**params))
@@ -114,22 +115,19 @@ class MADDPG(object):
         """
         obs, acs, rews, next_obs, dones = sample
         curr_agent = self.agents[agent_i]
-        if hasattr(curr_agent, "controller"):
-            return
         curr_agent.critic_optimizer.zero_grad()
         if self.alg_types[agent_i] == 'MADDPG':
-            if self.discrete_action: # one-hot encode action
+            if self.discrete_action:    # one-hot encode action
                 all_trgt_acs = [onehot_from_logits(pi(nobs)) for pi, nobs in
                                 zip(self.target_policies, next_obs)]
             else:
-                all_trgt_acs = []
-                for pi, nobs, alg_type in zip(self.target_policies, next_obs, self.alg_types):
-                    if alg_type in ['MADDPG', 'DDPG']:
-                        all_trgt_acs.append(pi(nobs))
-                    else:
-                        all_trgt_acs.append(pi(nobs))
-
-
+                # all_trgt_acs = []
+                # for pi, nobs, alg_type in zip(self.target_policies, next_obs, self.alg_types):
+                #     if alg_type in ['MADDPG', 'DDPG']:
+                #         all_trgt_acs.append(pi(nobs))
+                #     else:
+                #         all_trgt_acs.append(pi(nobs))
+                all_trgt_acs = [pi(nobs) for pi, nobs in zip(self.target_policies, next_obs)]
             # trgt_vf_in = torch.cat((*next_obs, *all_trgt_acs), dim=1) # ORIGINAL
 
             # take only the speeds of the *other* MADDPG agents.
@@ -190,10 +188,8 @@ class MADDPG(object):
                 elif self.discrete_action:
                     all_pol_acs.append(onehot_from_logits(pi(ob)))
                 else:
-                    if a_type in ['MADDPG', 'DDPG']:
-                        all_pol_acs.append(pi(ob))
-                    else:
-                        all_pol_acs.append(pi(ob))
+                    all_pol_acs.append(pi(ob))
+
 
 
             new_info_obs = self.take_only_new_info(agent_i, obs)
@@ -341,8 +337,7 @@ class MADDPG(object):
                 num_in_critic += acsp['act'].n if config.discrete_action else acsp['act'].shape[0]
 
             elif algtype is "CONTROLLER":
-                agent_init_params.append({"controller_radius": config.controller_radius ,
-                                          "discrete_action": config.discrete_action,
+                agent_init_params.append({"discrete_action": config.discrete_action,
                                           "num_predators": config.num_predators,
                                           "num_obstacles": config.num_landmarks})
                 continue
@@ -358,7 +353,8 @@ class MADDPG(object):
                      'discrete_action': config.discrete_action,
                      'device': device,
                      'predators_comm': config.predators_comm,
-                     'predators_comm_size': config.predators_comm_size}
+                     'predators_comm_size': config.predators_comm_size,
+                     'symbolic_comm': config.symbolic_comm}
         instance = cls(**init_dict)
         instance.init_dict = init_dict
         return instance

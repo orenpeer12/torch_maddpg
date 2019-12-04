@@ -48,7 +48,7 @@ def make_env(scenario_name, config, benchmark=False, discrete_action=False):
     return env
 
 
-from torch_utils.env_wrappers import SubprocVecEnv, DummyVecEnv
+from utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 import numpy as np
 
 def make_parallel_env(config):

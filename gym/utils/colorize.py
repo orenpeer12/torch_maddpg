@@ -21,8 +21,8 @@ def colorize(string, color, bold=False, highlight = False):
     blue, magenta, cyan, white, crimson
     """
 
-    # Import six here so that `torch_utils` has no import-time dependencies.
-    # We want this since we use `torch_utils` during our import-time sanity checks
+    # Import six here so that `utils` has no import-time dependencies.
+    # We want this since we use `utils` during our import-time sanity checks
     # that verify that our dependencies (including six) are actually present.
     import six
 

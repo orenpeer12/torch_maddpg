@@ -32,7 +32,7 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
     unplayable.
 
     If you wish to plot real time statistics as you play, you can use
-    gym.torch_utils.play.PlayPlot. Here's a sample code for plotting the reward
+    gym.utils.play.PlayPlot. Here's a sample code for plotting the reward
     for last 5 second of gameplay.
 
         def callback(obs_t, obs_tp1, action, rew, done, info):
