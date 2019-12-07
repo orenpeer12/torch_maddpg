@@ -1,9 +1,4 @@
-import numpy as np
-import matplotlib
 import sys
-if not sys.platform.startswith('win'):
-    matplotlib.use('tkagg')
-import matplotlib.pyplot as plt
 import json
 import os, shutil
 import torch
@@ -17,6 +12,11 @@ import gc
 from gym.spaces import Discrete
 from pathlib import Path
 from utils.my_plotting import *
+import numpy as np
+import matplotlib
+if not sys.platform.startswith('win'):
+    matplotlib.use('tkagg')
+import matplotlib.pyplot as plt
 
 if not sys.platform.startswith('win'):
     # from server
@@ -25,8 +25,8 @@ if not sys.platform.startswith('win'):
 
 else:
     # from local
-    # base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline1")
-    base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
+    base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
+    # base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     # base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
     path_to_summary = base_path / "logs\\summary.json"
 
@@ -34,17 +34,17 @@ else:
 CLEANUP = False
 # DISPLAY_LOSS = False
 
-DISPLAY_MEAN_RUN_REWARDS = True
-SHOW_RUN = False
+DISPLAY_MEAN_RUN_REWARDS = False
+DISPLAY_MEAN_WIN_RATES = False
+SHOW_RUN = True
 SMOOTH = True
 
-models_to_compare = ["play1"]
-# models_to_compare = ["1prey_1pred_noCom_noShape_noLand_LONG",
-#                      "1prey_1pred_noCom_sumShape_noLand_LONG",
-#                      "2prey_1pred_noCom_minShape_noLand_LONG",
-#                      "2prey_1pred_noCom_noShape_noLand_LONG",
-#                      "2prey_1pred_noCom_sumShape_noLand_LONG"
-#                      ]
+# models_to_compare = ["play1"]
+models_to_compare = ["1prey_1pred_noCom_noShape_noLand",
+                     "1prey_1pred_noCom_sumShape_noLand",
+                     "2prey_1pred_noCom_noShape_noLand",
+                     "2prey_1pred_noCom_sumShape_noLand"
+                     ]
 
 num_agents = 5
 
@@ -57,8 +57,8 @@ if DISPLAY_MEAN_RUN_REWARDS:
     # plt.title("Prey total episodic reward average across runs")
     # plt.xlabel("Optimizer steps")
 
-    # for model, num_agents in zip(models_to_compare, [2,2,3,3,3]):
-    for model, num_agents in zip(models_to_compare, [2]):
+    # for model, num_agents in zip(models_to_compare, [2]):
+    for model, num_agents in zip(models_to_compare, [2,2,3,3]):
         mean_reward_per_episode = []    # the mean reward of each agent each episode
         tot_reward_per_episode = []     # the tot cumulative reward of each agent each episode.
         runs = os.listdir(base_path / model)
@@ -99,7 +99,7 @@ if DISPLAY_MEAN_RUN_REWARDS:
             mean_ep_rew_mean_across_optim_step.append(agent_mean_ep_rewards[i:i + 4].mean())
         plt.figure(agent_type)
         if SMOOTH: tot_ep_rew_mean_across_optim_step = smooth(tot_ep_rew_mean_across_optim_step)
-        plt.plot(tot_ep_rew_mean_across_optim_step, linewidth=0.5)
+        plt.plot(tot_ep_rew_mean_across_optim_step, linewidth=1)
         ##
             # plt.plot(mean_ep_rew_mean_across_optim_step)
     # for model in ["Predators", "Prey"]:
@@ -108,31 +108,89 @@ if DISPLAY_MEAN_RUN_REWARDS:
     plt.show()
     # set_default_mpl()
 
-if SHOW_RUN:
-    config = Arglist()
-    model_path = base_path / models_to_compare[0] / "run4" / "model.pt"
-    print(model_path)
-    # config = config.load_args(model_path.__str__().replace("model.pt", "arglist.pkl"))
-    config.load_model_path = model_path._str
-    env = make_parallel_env(config)
-    # add comm to action space:
-    for i, a_type in enumerate(env.agent_types):
-        if a_type is "adversary":
-            env.action_space[i] = \
-                {'act': env.action_space[i], 'comm': Discrete(config.predators_comm_size)}
-        else:
-            env.action_space[i] = \
-                {'act': env.action_space[i], 'comm': Discrete(0)}
+if DISPLAY_MEAN_WIN_RATES:
+    plt.figure("Predators")
+    plt.title("Predators total evaluation win-rates, averaged across runs")
+    plt.xlabel("Evaluation #")
+    # plt.figure("Prey")
+    # plt.title("Prey total episodic reward average across runs")
+    # plt.xlabel("Optimizer steps")
 
-    maddpg = MADDPG.init_from_save(config.load_model_path)
-    # show some examples:
-    for ep_i in range(0, 5):
-        print("showing example number " + str(ep_i))
+    # for model, num_agents in zip(models_to_compare, [2]):
+    for model, num_agents in zip(models_to_compare, [2,2,3,3]):
+        mean_reward_per_episode = []    # the mean reward of each agent each episode
+        tot_reward_per_episode = []     # the tot cumulative reward of each agent each episode.
+        runs = os.listdir(base_path / model)
+        runs = [run for run in runs if run.startswith('run')]
+        num_runs = len(runs)
+
+        arguments = Arglist()
+        # num_agents = arguments.num_predators + arguments.num_prey
+
+        first = True
+        for run in runs:
+            gc.collect()
+            win_rate = np.load(base_path /model / run / "win_rates.npy", allow_pickle=True)
+            if first:
+                win_rates = np.zeros(win_rate.shape)
+                first = False
+            ####
+            if win_rate.shape[0] != 76:
+                win_rate = np.hstack([win_rate, win_rate[-1]])
+            ####
+            win_rates += win_rate
+
+        win_rates /= num_runs
+
+        gc.collect()
+
+        # for agent, agent_type in zip([0, 1], ["Predators", "Prey"]):
+        agent = 0
+        agent_type = "Predators"
+
+        plt.figure(agent_type)
+
+        plt.plot(win_rates, linewidth=1)
+        ##
+            # plt.plot(mean_ep_rew_mean_across_optim_step)
+    # for model in ["Predators", "Prey"]:
+    #     plt.figure(model)
+    plt.legend([m.replace("_contAct_thinObs", "").replace("agent", "prey") for m in models_to_compare])
+    plt.show()
+    # set_default_mpl()
+
+
+if SHOW_RUN:
+    cur_model = 2
+    see_runs = [ind for ind in range(0, 10)]
+    wait = 0.01
+    num_rolls = 3
+    ep_len = 100
+
+    for cur_run in see_runs:
+        config = Arglist()
+        config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(cur_run)))
+        model_path = base_path / models_to_compare[cur_model] / ("run" + str(cur_run)) / "model.pt"
+        print(model_path)
+        config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(cur_run)))
+        config.load_model_path = model_path._str
+        env = make_parallel_env(config)
+        # add comm to action space:
+        for i, a_type in enumerate(env.agent_types):
+            if a_type is "adversary":
+                env.action_space[i] = \
+                    {'act': env.action_space[i], 'comm': Discrete(config.predators_comm_size)}
+            else:
+                env.action_space[i] = \
+                    {'act': env.action_space[i], 'comm': Discrete(0)}
+
+        maddpg = MADDPG.init_from_save(config.load_model_path)
+        # show some examples:
         obs = env.reset()
         maddpg.prep_rollouts(device='cpu')
-        for et_i in range(100):
+        for step in range(ep_len):
             env.env._render("human", False)
-            time.sleep(0.05)
+            time.sleep(wait)
             # rearrange observations to be per agent, and convert to torch Variable
             torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
                                   requires_grad=False)

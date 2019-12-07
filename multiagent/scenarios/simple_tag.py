@@ -171,7 +171,14 @@ class Scenario(BaseScenario):
             # return np.concatenate([np.array([np.int(agent.name[-1]), np.int(agent.name[-1])])] +
             #                       [agent.state.p_pos] + entity_pos + other_pos + other_vel)
 
+    def is_done(self, agent, world):
+        if agent in self.good_agents(world):
+            return False
 
+        for prey in self.good_agents(world):
+            if self.is_collision(agent, prey):
+                return True
+        return False
 
     # def observation(self, agent, world):
     #     # get positions of all entities in this agent's reference frame

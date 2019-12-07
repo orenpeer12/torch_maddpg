@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="132.68.57.25">
+  <component name="PublishConfigData" autoUpload="Always" serverName="oren@132.68.57.25:22">
     <serverData>
-      <paths name="132.68.57.25">
+      <paths name="oren@132.68.57.25:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$" />
+            <mapping deploy="./" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

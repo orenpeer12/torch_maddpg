@@ -17,8 +17,8 @@ def printProgressBar(iteration, start_time, total, prefix='', suffix='', length=
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
     print('\r{} |{}| {}% {}'.format(prefix, bar, percent, suffix), end='')
-    # Print New Line on Complete
-    if iteration == total-1:
+    # Print New Line on Complete #
+    if iteration == total:
         ending = " || Total runtime: {0:.1f} minutes.".format((time.time() - start_time) / 60) + "\n"
         print('\r{} |{}| {}% {}'.format(prefix, bar, percent, suffix + ending), end='')
         print()

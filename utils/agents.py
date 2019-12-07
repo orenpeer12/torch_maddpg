@@ -89,10 +89,13 @@ class DDPGAgent(object):
         else:  # continuous action
             if explore:
                 if self.comm:
-                    action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()),
-                                       requires_grad=False)[:2]
-            action[:, :-self.comm_size] = action[:, :-self.comm_size].clamp(-1, 1)
-        return action
+                    a=1
+                #     action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()),
+                #                        requires_grad=False)[:2]
+                # else:
+                action += Variable(Tensor(self.exploration.noise()), requires_grad=False)
+            # action[:, :-self.comm_size] = action[:, :-self.comm_size].clamp(-1, 1)
+        return action.clamp(-1, 1)
 
     def get_params(self):
         return {'policy': self.policy.state_dict(),

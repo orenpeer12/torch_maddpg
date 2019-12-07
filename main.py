@@ -11,8 +11,9 @@ from utils.make_env import make_parallel_env
 from utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
+from utils.maddpg_utils import *
 
-# 01/12/19 14:32
+# 05/12/19 14:32
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
@@ -43,21 +44,27 @@ if __name__ == '__main__':
         if not log_dir.exists():
             os.makedirs(log_dir)
 
-        config.save(run_dir)
+        config.save_args(run_dir)
         if run_num is 0: config.print_args()
         logger = SummaryWriter(str(log_dir))
 
         if not config.USE_CUDA:
             torch.set_num_threads(config.n_training_threads)
         env = make_parallel_env(config)
+        eval_env = make_parallel_env(config)
+
         # add comm to action space:
         for a_i, a_type in enumerate(env.agent_types):
             if a_type is "adversary":
                 env.action_space[a_i] = \
                     {'act': env.action_space[a_i], 'comm': Discrete(config.predators_comm_size)}
+                eval_env.action_space[a_i] = \
+                    {'act': eval_env.action_space[a_i], 'comm': Discrete(config.predators_comm_size)}
             else:
                 env.action_space[a_i] =\
                     {'act': env.action_space[a_i], 'comm': Discrete(0)}
+                eval_env.action_space[a_i] = \
+                    {'act': eval_env.action_space[a_i], 'comm': Discrete(0)}
 
         maddpg = MADDPG.init_from_env(env, config)
         replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
@@ -71,26 +78,24 @@ if __name__ == '__main__':
         all_ep_rewards = []
         mean_ep_rewards = []
         start_time = time.time()
-        for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
-            ep_rewards = np.zeros((1, len(env.agent_types)))
-            if ep_i % 100 == 0:
-                printProgressBar(ep_i, start_time, config.n_episodes, "run" + str(run_num) + ": Episodes Done: ", "", 20, "%")
-                # print("Episodes %i-%i of %i" % (ep_i + 1,
-                #                                 ep_i + 1 + config.n_rollout_threads,
-                #                                 config.n_episodes))
-            obs = env.reset()
-            # obs.shape = (n_rollout_threads, nagent)(nobs), nobs differs per agent so not tensor
-            maddpg.prep_rollouts(device=config.device)
+        step = 0
+        win_counter = 0
+        curr_ep = -1
+        eval_win_rates = [0]
 
-            explr_pct_remaining = max(0, config.n_exploration_eps - ep_i) / config.n_exploration_eps
+        while step < config.n_time_steps:   # total steps to be performed during a single run
+            # start a episode due to episode termination\done
+            curr_ep += 1
+            ep_rewards = np.zeros((1, len(env.agent_types)))    # init reward vec for single episode.
+
+            # prepare episodic stuff
+            obs = env.reset()
+            maddpg.prep_rollouts(device=config.device)
+            explr_pct_remaining = max(0, config.n_exploration_steps - step) / config.n_exploration_steps
             maddpg.scale_noise(config.final_noise_scale + (config.init_noise_scale - config.final_noise_scale) * explr_pct_remaining)
             maddpg.reset_noise()
 
-            for et_i in range(config.episode_length):
-                # if ep_i > 1000:
-                #     env.env._render("human", False)
-                #     time.sleep(0.1)
-                # rearrange observations to be per agent, and convert to torch Variable
+            for ep_step in range(config.episode_length):    # 1 episode loop. ends due to term\done
                 torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, ind])),
                                       requires_grad=False)
                              for ind in range(maddpg.nagents)]
@@ -102,30 +107,33 @@ if __name__ == '__main__':
                 # rearrange actions to be per environment
                 actions = [[ac[idx] for ac in agent_actions] for idx in range(config.n_rollout_threads)]
                 next_obs, rewards, dones, infos = env.step(actions)
+
+                if (len(replay_buffer) >= config.batch_size and
+                        (step % config.steps_per_eval) < config.n_rollout_threads):
+                    eval_win_rates.append(eval_model(maddpg, eval_env, config.episode_length, config.num_steps_in_eval,
+                                                     config.n_rollout_threads))
+
+                if (len(replay_buffer) >= config.batch_size and
+                        (step % config.steps_per_update) < config.n_rollout_threads):
+                    train_model(maddpg, config, replay_buffer)
+
+
+                step += config.n_rollout_threads  # advance the step-counter
                 ep_rewards += rewards
                 replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
+
+                if dones.any(): # terminate episode if won! #
+                    win_counter += 1
+                    break
                 obs = next_obs
-                t += config.n_rollout_threads
-                if (len(replay_buffer) >= config.batch_size and
-                        (t % config.steps_per_update) < config.n_rollout_threads):
-
-                    maddpg.prep_training(device=config.device)
-
-                    for u_i in range(config.n_rollout_threads):
-                        for a_i in range(maddpg.nagents):
-                            if maddpg.alg_types[a_i] is 'CONTROLLER':
-                                continue
-                            sample = replay_buffer.sample(config.batch_size,
-                                                          to_gpu=config.USE_CUDA)
-                            maddpg.update(sample, a_i, logger=logger)
-                        maddpg.update_all_targets()
-                    maddpg.prep_rollouts(device=config.device)
 
             # ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
             mean_ep_rewards.append(ep_rewards / config.episode_length)
             all_ep_rewards.append(ep_rewards)
-            if ep_i == config.n_episodes - 1:
-                printProgressBar(ep_i, start_time, config.n_episodes, "run" + str(run_num) + ": Episodes Done ", "", 20, "%")
+
+            if step % 100 == 0 or (step == config.n_time_steps - 1):    # print progress.
+                printProgressBar(step, start_time, config.n_time_steps, "run" + str(run_num) + ": Steps Done: ",
+                                 " Last eval win rate: {0:.2%}".format(eval_win_rates[-1]), 20, "%")
 
             # for a_i, a_ep_rew in enumerate(ep_rews):
             #     logger.add_scalar('agent%i/mean_episode_rewards' % a_i, a_ep_rew, ep_i)
@@ -137,6 +145,7 @@ if __name__ == '__main__':
 
         np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards.copy(),
                                                "mean_ep_rewards": mean_ep_rewards.copy()}, True)
+        np.save(run_dir / 'win_rates', eval_win_rates, True)
         maddpg.save(run_dir / 'model.pt')
         # env.close()
         logger.export_scalars_to_json(str(log_dir / 'summary.json'))

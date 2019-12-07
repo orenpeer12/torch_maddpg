@@ -6,21 +6,23 @@ from gym.spaces import Box, Discrete, MultiDiscrete
 from pathlib import Path
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
-from torch_utils.make_env import make_parallel_env
-from torch_utils.buffer import ReplayBuffer
+from utils.printer import *
+from utils.make_env import make_parallel_env
+from utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
 
-# 20/11/19 14:00
+# 01/12/19 14:32
 do_log = False
 MAKE_NEW_LOG = True
+LOAD_MODEL = False
 
 
 if __name__ == '__main__':
     config = Arglist()
     num_runs = config.num_runs
 
-    for i in range(num_runs):
+    for run_num in range(num_runs):
         gc.collect()
         model_dir = Path('./models') / config.env_id / config.model_name
         if not model_dir.exists():
@@ -42,20 +44,20 @@ if __name__ == '__main__':
             os.makedirs(log_dir)
 
         config.save(run_dir)
-        config.print_args()
+        if run_num is 0: config.print_args()
         logger = SummaryWriter(str(log_dir))
 
         if not config.USE_CUDA:
             torch.set_num_threads(config.n_training_threads)
         env = make_parallel_env(config)
         # add comm to action space:
-        for i, a_type in enumerate(env.agent_types):
+        for a_i, a_type in enumerate(env.agent_types):
             if a_type is "adversary":
-                env.action_space[i] = \
-                    {'act': env.action_space[i], 'comm' : Discrete(config.predators_comm_size)}
+                env.action_space[a_i] = \
+                    {'act': env.action_space[a_i], 'comm': Discrete(config.predators_comm_size)}
             else:
-                env.action_space[i] =\
-                    {'act': env.action_space[i], 'comm' : Discrete(0)}
+                env.action_space[a_i] =\
+                    {'act': env.action_space[a_i], 'comm': Discrete(0)}
 
         maddpg = MADDPG.init_from_env(env, config)
         replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
@@ -68,12 +70,14 @@ if __name__ == '__main__':
         # reset test results arrays
         all_ep_rewards = []
         mean_ep_rewards = []
-
+        start_time = time.time()
         for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
             ep_rewards = np.zeros((1, len(env.agent_types)))
-            print("Episodes %i-%i of %i" % (ep_i + 1,
-                                            ep_i + 1 + config.n_rollout_threads,
-                                            config.n_episodes))
+            if ep_i % 100 == 0:
+                printProgressBar(ep_i, start_time, config.n_episodes, "run" + str(run_num) + ": Episodes Done: ", "", 20, "%")
+                # print("Episodes %i-%i of %i" % (ep_i + 1,
+                #                                 ep_i + 1 + config.n_rollout_threads,
+                #                                 config.n_episodes))
             obs = env.reset()
             # obs.shape = (n_rollout_threads, nagent)(nobs), nobs differs per agent so not tensor
             maddpg.prep_rollouts(device=config.device)
@@ -87,16 +91,16 @@ if __name__ == '__main__':
                 #     env.env._render("human", False)
                 #     time.sleep(0.1)
                 # rearrange observations to be per agent, and convert to torch Variable
-                torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
+                torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, ind])),
                                       requires_grad=False)
-                             for i in range(maddpg.nagents)]
+                             for ind in range(maddpg.nagents)]
                 # get actions as torch Variables
                 torch_agent_actions = maddpg.step(torch_obs, explore=True)
                 # convert actions to numpy arrays
                 # agent_actions = [ac.detach().cpu().data.numpy() for ac in torch_agent_actions]
                 agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
                 # rearrange actions to be per environment
-                actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
+                actions = [[ac[idx] for ac in agent_actions] for idx in range(config.n_rollout_threads)]
                 next_obs, rewards, dones, infos = env.step(actions)
                 ep_rewards += rewards
                 replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
@@ -109,18 +113,22 @@ if __name__ == '__main__':
 
                     for u_i in range(config.n_rollout_threads):
                         for a_i in range(maddpg.nagents):
+                            if maddpg.alg_types[a_i] is 'CONTROLLER':
+                                continue
                             sample = replay_buffer.sample(config.batch_size,
                                                           to_gpu=config.USE_CUDA)
                             maddpg.update(sample, a_i, logger=logger)
                         maddpg.update_all_targets()
                     maddpg.prep_rollouts(device=config.device)
 
-            ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
+            # ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
             mean_ep_rewards.append(ep_rewards / config.episode_length)
             all_ep_rewards.append(ep_rewards)
+            if ep_i == config.n_episodes - 1:
+                printProgressBar(ep_i, start_time, config.n_episodes, "run" + str(run_num) + ": Episodes Done ", "", 20, "%")
 
-            for a_i, a_ep_rew in enumerate(ep_rews):
-                logger.add_scalar('agent%i/mean_episode_rewards' % a_i, a_ep_rew, ep_i)
+            # for a_i, a_ep_rew in enumerate(ep_rews):
+            #     logger.add_scalar('agent%i/mean_episode_rewards' % a_i, a_ep_rew, ep_i)
 
             # if ep_i % config.save_interval < config.n_rollout_threads:
             #     os.makedirs(run_dir / 'incremental', exist_ok=True)
@@ -133,3 +141,76 @@ if __name__ == '__main__':
         # env.close()
         logger.export_scalars_to_json(str(log_dir / 'summary.json'))
         logger.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import torch
+import time
+import os, sys, gc
+import numpy as np
+from gym.spaces import Box, Discrete, MultiDiscrete
+from pathlib import Path
+from torch.autograd import Variable
+from tensorboardX import SummaryWriter
+from utils.make_env import make_parallel_env
+from utils.buffer import ReplayBuffer
+from algorithms.maddpg import MADDPG
+from torch_args import Arglist
+import json
+
+# 20/11/19 14:00
+do_log = False
+MAKE_NEW_LOG = True
+
+models_to_compare = ["1prey_1pred_noCom_noShape_noLand_LONG",
+                     "1prey_1pred_noCom_sumShape_noLand_LONG",
+                     "2prey_1pred_noCom_noShape_noLand_LONG",
+                     "2prey_1pred_noCom_sumShape_noLand_LONG"
+                     ]
+base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline1")
+
+# config = config.load_args(model_path.__str__().replace("model.pt", "arglist.pkl"))
+# config.load_model_path = model_path._str
+
+for model, [num_prey, num_pred], shaping in zip(models_to_compare, [[1,1], [1,1], [2,1], [2,1]], [False, True, False, True]):
+    config = Arglist()
+    runs = os.listdir(base_path / model)
+    runs = [run for run in runs if run.startswith('run')]
+    config.num_runs = len(runs)
+    config.num_prey = num_prey
+    config.pred = num_pred
+    config.shaping = shaping
+    for run in runs:
+        config.save_args(base_path / model / run)
+
+
