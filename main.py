@@ -13,7 +13,7 @@ from algorithms.maddpg import MADDPG
 from torch_args import Arglist
 from utils.maddpg_utils import *
 
-# 05/12/19 14:32
+# 07/12/19 18:32
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
