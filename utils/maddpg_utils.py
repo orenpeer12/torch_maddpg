@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.autograd import Variable
-
+import time
 
 def train_model(maddpg, config, replay_buffer):
     maddpg.prep_training(device=config.device)
@@ -16,7 +16,7 @@ def train_model(maddpg, config, replay_buffer):
     maddpg.prep_rollouts(device=config.device)
 
 
-def eval_model(maddpg, eval_env, ep_len, num_steps, rollout_threads):
+def eval_model(maddpg, eval_env, ep_len, num_steps, rollout_threads, display=False):
     eval_step = -1
     eval_wins = 0
     num_episodes = -1
@@ -24,6 +24,9 @@ def eval_model(maddpg, eval_env, ep_len, num_steps, rollout_threads):
         num_episodes += 1
         eval_obs = eval_env.reset()
         for eval_ep_step in range(ep_len):
+            if display:
+                eval_env.env._render("human", False)
+                time.sleep(0.05)
             eval_step += 1
             eval_torch_obs = [Variable(torch.Tensor(np.vstack(eval_obs[:, ind])), requires_grad=False)
                               for ind in range(maddpg.nagents)]

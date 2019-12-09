@@ -12,6 +12,7 @@ from utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
 from utils.maddpg_utils import *
+from utils.agents import IL_Controller
 
 # 07/12/19 18:32
 do_log = False
@@ -65,8 +66,8 @@ if __name__ == '__main__':
                     {'act': env.action_space[a_i], 'comm': Discrete(0)}
                 eval_env.action_space[a_i] = \
                     {'act': eval_env.action_space[a_i], 'comm': Discrete(0)}
-
         maddpg = MADDPG.init_from_env(env, config)
+        IL_controller = IL_Controller(config)  # imitation learning controller
         replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
                                      [obsp.shape[0] for obsp in env.observation_space],
                                      [acsp['comm'].n + acsp['act'].n if config.discrete_action else acsp['comm'].n + acsp['act'].shape[0]
@@ -109,16 +110,22 @@ if __name__ == '__main__':
                 next_obs, rewards, dones, infos = env.step(actions)
 
                 if (len(replay_buffer) >= config.batch_size and
-                        (step % config.steps_per_eval) < config.n_rollout_threads):
+                        (step % config.steps_per_eval) < config.n_rollout_threads):     # perform evaluation
                     eval_win_rates.append(eval_model(maddpg, eval_env, config.episode_length, config.num_steps_in_eval,
-                                                     config.n_rollout_threads))
+                                                     config.n_rollout_threads, display=False))
 
                 if (len(replay_buffer) >= config.batch_size and
-                        (step % config.steps_per_update) < config.n_rollout_threads):
+                        (step % config.steps_per_update) < config.n_rollout_threads):   # perform training
                     train_model(maddpg, config, replay_buffer)
 
-
                 step += config.n_rollout_threads  # advance the step-counter
+
+                if (len(replay_buffer) >= config.batch_size and
+                        (step % config.IL_inject_every) < config.n_rollout_threads):  # perform IL injection
+                    step, eval_win_rates = \
+                        IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
+                    IL_controller.decay()
+
                 ep_rewards += rewards
                 replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
 
@@ -131,7 +138,7 @@ if __name__ == '__main__':
             mean_ep_rewards.append(ep_rewards / config.episode_length)
             all_ep_rewards.append(ep_rewards)
 
-            if step % 100 == 0 or (step == config.n_time_steps - 1):    # print progress.
+            if step % 100 == 0 or (step == config.n_time_steps):    # print progress.
                 printProgressBar(step, start_time, config.n_time_steps, "run" + str(run_num) + ": Steps Done: ",
                                  " Last eval win rate: {0:.2%}".format(eval_win_rates[-1]), 20, "%")
 

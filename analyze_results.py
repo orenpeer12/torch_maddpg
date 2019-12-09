@@ -25,8 +25,8 @@ if not sys.platform.startswith('win'):
 
 else:
     # from local
-    base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
-    # base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
+    # base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
+    base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     # base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
     path_to_summary = base_path / "logs\\summary.json"
 
@@ -35,15 +35,16 @@ CLEANUP = False
 # DISPLAY_LOSS = False
 
 DISPLAY_MEAN_RUN_REWARDS = False
-DISPLAY_MEAN_WIN_RATES = False
+DISPLAY_MEAN_WIN_RATES = True
 SHOW_RUN = True
 SMOOTH = True
 
 # models_to_compare = ["play1"]
-models_to_compare = ["1prey_1pred_noCom_noShape_noLand",
-                     "1prey_1pred_noCom_sumShape_noLand",
-                     "2prey_1pred_noCom_noShape_noLand",
-                     "2prey_1pred_noCom_sumShape_noLand"
+models_to_compare = [#"1prey_1pred_noCom_noShape_noLand",
+                     # "1prey_1pred_noCom_sumShape_noLand",
+                     # "2prey_1pred_noCom_noShape_noLand",
+                     # "2prey_1pred_noCom_sumShape_noLand",
+                     "2prey_1pred_noCom_sumShape_noLand_withIL"
                      ]
 
 num_agents = 5
@@ -117,7 +118,7 @@ if DISPLAY_MEAN_WIN_RATES:
     # plt.xlabel("Optimizer steps")
 
     # for model, num_agents in zip(models_to_compare, [2]):
-    for model, num_agents in zip(models_to_compare, [2,2,3,3]):
+    for model, num_agents in zip(models_to_compare, [2,2,3,3,3]):
         mean_reward_per_episode = []    # the mean reward of each agent each episode
         tot_reward_per_episode = []     # the tot cumulative reward of each agent each episode.
         runs = os.listdir(base_path / model)
@@ -157,36 +158,39 @@ if DISPLAY_MEAN_WIN_RATES:
     #     plt.figure(model)
     plt.legend([m.replace("_contAct_thinObs", "").replace("agent", "prey") for m in models_to_compare])
     plt.show()
-    # set_default_mpl()
+    set_default_mpl()
 
 
 if SHOW_RUN:
-    cur_model = 2
-    see_runs = [ind for ind in range(0, 10)]
-    wait = 0.01
+    cur_model = 0
+    # see_runs = [ind for ind in range(0, 10)]
+    see_runs = [1,1,1,1,1,1,1,1,1,1]
+    wait = 0.05
     num_rolls = 3
-    ep_len = 100
+    ep_len = 50
+    config = Arglist()
+
+    config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
+    model_path = base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])) / "model.pt"
+    print(model_path)
+    config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
+    config.load_model_path = model_path._str
+    env = make_parallel_env(config)
+    for i, a_type in enumerate(env.agent_types):
+        if a_type is "adversary":
+            env.action_space[i] = \
+                {'act': env.action_space[i], 'comm': Discrete(config.predators_comm_size)}
+        else:
+            env.action_space[i] = \
+                {'act': env.action_space[i], 'comm': Discrete(0)}
 
     for cur_run in see_runs:
-        config = Arglist()
-        config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(cur_run)))
-        model_path = base_path / models_to_compare[cur_model] / ("run" + str(cur_run)) / "model.pt"
-        print(model_path)
-        config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(cur_run)))
-        config.load_model_path = model_path._str
-        env = make_parallel_env(config)
         # add comm to action space:
-        for i, a_type in enumerate(env.agent_types):
-            if a_type is "adversary":
-                env.action_space[i] = \
-                    {'act': env.action_space[i], 'comm': Discrete(config.predators_comm_size)}
-            else:
-                env.action_space[i] = \
-                    {'act': env.action_space[i], 'comm': Discrete(0)}
 
         maddpg = MADDPG.init_from_save(config.load_model_path)
         # show some examples:
         obs = env.reset()
+        # env.env._render("human", True)
         maddpg.prep_rollouts(device='cpu')
         for step in range(ep_len):
             env.env._render("human", False)
@@ -203,7 +207,10 @@ if SHOW_RUN:
             actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
             next_obs, rewards, dones, infos = env.step(actions)
             obs = next_obs
-        env.close()
+        # env.env._render("human", True)
+        # env.get_viewer().close()
+        # env.close()
+
 #
 #
 #

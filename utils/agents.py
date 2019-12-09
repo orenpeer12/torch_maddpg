@@ -7,6 +7,9 @@ from .misc import hard_update, gumbel_softmax, onehot_from_logits
 from .noise import OUNoise
 import torch.nn as nn
 import numpy as np
+import random
+from utils.maddpg_utils import train_model
+from utils.maddpg_utils import *
 
 class DDPGAgent(object):
     """
@@ -154,13 +157,13 @@ class Prey_Controller(object):
             #     action[nearby_idx[:, 0]] = act_dir
             # return action
 
-        elif self.discrete_action:
-            if nearby_idx.shape[0] is 0:
-                action = torch.zeros(size=(obs.shape[0], 5), requires_grad=False)
-                action[0, torch.randint(low=0, high=5, size=(1,))] = 1
-                return action
-            else:
-                pass    # TODO: add support to descrete actions!!
+        # elif self.discrete_action:
+        #     if nearby_idx.shape[0] is 0:
+        #         action = torch.zeros(size=(obs.shape[0], 5), requires_grad=False)
+        #         action[0, torch.randint(low=0, high=5, size=(1,))] = 1
+        #         return action
+        #     else:
+        #         pass    # TODO: add support to descrete actions!!
 
     # def step(self, obs, explore=False): # SLOW!
     #     if type(obs) is np.ndarray:
@@ -198,3 +201,79 @@ class Prey_Controller(object):
 
     def load_params(self, params):
         return
+
+
+class IL_Controller(object):
+    def __init__(self, config):
+        self.num_predators = config.num_predators
+        self.num_prey = config.num_prey
+        self.num_obstacles = config.num_landmarks
+        self.discrete_action = config.discrete_action
+        self.IL_decay = config.IL_decay
+        self.IL_amount = config.IL_amount
+        self.ep_len = config.episode_length
+        self.n_agents = config.num_predators + config.num_prey
+        self.n_rollout_threads = config.n_rollout_threads
+
+    def step_IL(self, obs, target_prey_idx, explore=False):
+        # thin_obs = obs.reshape((obs.shape[-1]))
+        prey_obs_idx = 4 + self.num_obstacles * 2 + (self.num_predators - 1) * 2 + target_prey_idx*2
+        prey_loc = obs[:,  prey_obs_idx: prey_obs_idx + 2]
+        if not self.discrete_action:
+            return prey_loc / torch.norm(prey_loc).clamp(-1, 1)
+
+    def decay(self):
+        self.IL_amount = int(self.IL_amount * self.IL_decay)
+
+    # def get_closest_prey(self, inj_obs):
+    #     pass
+
+    def IL_inject(self, maddpg, replay_buffer, eval_env, step, config, eval_win_rates):
+        # import time
+        injection_step = 0
+
+        while injection_step < self.IL_amount:  # total steps to be injected to buffer
+            inj_obs = eval_env.reset()
+            maddpg_agents_idx = [i for i, x in enumerate(maddpg.alg_types) if x == "MADDPG"]
+            target_prey_idx = {ag: random.choice(np.arange(self.num_prey)) for
+                ag, ix in zip([maddpg.agents[idx] for idx in maddpg_agents_idx], range(config.num_predators))}
+
+            for inj_ep_step in range(self.ep_len):
+                # eval_env.env._render("human", False)
+                # time.sleep(0.05)
+                if injection_step == self.IL_amount:
+                    break
+                # eval_env.env._render("human", False)
+                # time.sleep(0.1)
+                if (len(replay_buffer) >= config.batch_size and
+                        ((step + injection_step) % config.steps_per_update) < config.n_rollout_threads):   # perform training
+                    train_model(maddpg, config, replay_buffer)
+
+                if (len(replay_buffer) >= config.batch_size and
+                        ((step + injection_step) % config.steps_per_eval) < config.n_rollout_threads):  # perform evaluation
+                    eval_win_rates.append(eval_model(maddpg, eval_env, config.episode_length, config.num_steps_in_eval,
+                                                     config.n_rollout_threads, display=False))
+
+                inj_torch_obs = [Variable(torch.Tensor(np.vstack(inj_obs[:, ind])), requires_grad=False)
+                                  for ind in range(self.n_agents)]
+                inj_torch_agent_actions = []
+                for curr_agent, curr_obs in zip(maddpg.agents, inj_torch_obs):
+                    if hasattr(curr_agent, "controller"):    # curr agent is a controller. use it
+                        inj_torch_agent_actions.append(curr_agent.step(curr_obs))
+                    else:
+                        inj_torch_agent_actions.append(self.step_IL(curr_obs, target_prey_idx[curr_agent]))
+
+                agent_actions = [ac.data.numpy() for ac in inj_torch_agent_actions]
+                actions = [[ac[idx] for ac in agent_actions] for idx in range(self.n_rollout_threads)]
+                inj_next_obs, inj_rewards, inj_dones, eval_infos = eval_env.step(actions)
+
+                replay_buffer.push(inj_obs, agent_actions, inj_rewards, inj_next_obs, inj_dones)
+
+                if inj_dones.any():  # terminate episode if won!
+                    injection_step += 1
+                    break
+                inj_obs = inj_next_obs
+                injection_step += 1
+
+
+        return step + injection_step, eval_win_rates
