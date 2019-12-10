@@ -36,10 +36,11 @@ class Arglist:
         #######################
         #### General agrs: ####
         #######################
-        shape = "sum" if self.shaping else "no"
+        shape = "sumShape" if self.shaping else "noShape"
         IL_str = "_withIL" if self.use_IL else "_noIL"
-        extra_str = "_lessIL"
-        self.model_name = "./" + str(self.num_prey) + "prey_" + str(self.num_predators) + "pred_noCom_" + shape + "Shape_noLand" + IL_str + extra_str
+        extra_str = "_long_ep"
+        players_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred"
+        self.model_name = "./" + players_str + "_noCom_" + shape + "_noLand" + IL_str + extra_str
         # self.model_name = "./play1"
         self.comments = "controller prey. with IL"
         #########################
@@ -51,11 +52,11 @@ class Arglist:
         self.symbolic_comm = False
         # Run parameters
         self.buffer_length = int(1e6)
-        self.num_runs = 15
-        self.n_episodes = 30000
+        self.num_runs = 10
+        self.n_episodes = 20000
         # self.n_episodes = 25000
         # self.n_episodes = 50000
-        self.episode_length = 25
+        self.episode_length = 40
         self.n_time_steps = self.n_episodes * self.episode_length
         self.steps_per_update = 100
         self.steps_per_eval = 10000

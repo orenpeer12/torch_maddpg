@@ -44,7 +44,7 @@ models_to_compare = [#"1prey_1pred_noCom_noShape_noLand",
                      # "1prey_1pred_noCom_sumShape_noLand",
                      # "2prey_1pred_noCom_noShape_noLand",
                      # "2prey_1pred_noCom_sumShape_noLand",
-                     "2prey_1pred_noCom_sumShape_noLand_withIL"
+                     "2prey_2pred_noCom_sumShape_noLand_withIL_lessIL"
                      ]
 
 num_agents = 5
@@ -118,7 +118,7 @@ if DISPLAY_MEAN_WIN_RATES:
     # plt.xlabel("Optimizer steps")
 
     # for model, num_agents in zip(models_to_compare, [2]):
-    for model, num_agents in zip(models_to_compare, [2,2,3,3,3]):
+    for model in models_to_compare:
         mean_reward_per_episode = []    # the mean reward of each agent each episode
         tot_reward_per_episode = []     # the tot cumulative reward of each agent each episode.
         runs = os.listdir(base_path / model)
@@ -130,14 +130,16 @@ if DISPLAY_MEAN_WIN_RATES:
 
         first = True
         for run in runs:
+            arguments.load_args(base_path /model / run)
+            num_agents = arguments.num_prey + arguments.num_predators
             gc.collect()
             win_rate = np.load(base_path /model / run / "win_rates.npy", allow_pickle=True)
             if first:
                 win_rates = np.zeros(win_rate.shape)
                 first = False
             ####
-            if win_rate.shape[0] != 76:
-                win_rate = np.hstack([win_rate, win_rate[-1]])
+            if win_rate.shape[0] == 76:
+                win_rate = win_rate[:-1]
             ####
             win_rates += win_rate
 
