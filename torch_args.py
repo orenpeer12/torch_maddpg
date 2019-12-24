@@ -40,14 +40,14 @@ class Arglist:
         IL_str = "_withIL" if self.use_IL else "_noIL"
         extra_str = "_long_ep"
         players_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred"
-        self.model_name = "./" + players_str + "_noCom_" + shape + "_noLand" + IL_str + extra_str
-        # self.model_name = "./play1"
-        self.comments = "controller prey. with IL"
+        # self.model_name = "./" + players_str + "_noCom_" + shape + "_noLand" + IL_str + extra_str
+        self.model_name = "./play1"
+        self.comments = "controller prey. with IL, with comm"
         #########################
         #### Algorithm args: ####
         #########################
         # comm
-        self.predators_comm = False
+        self.predators_comm = True
         self.predators_comm_size = 4 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.symbolic_comm = False
         # Run parameters
@@ -67,6 +67,7 @@ class Arglist:
         self.final_noise_scale = 0.0
         self.save_interval = 1000
         self.hidden_dim = 64
+
         self.gamma = 0.95
         self.lr = 0.01
         self.tau = 0.01

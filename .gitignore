@@ -1,2 +1,10 @@
 results_predators/
 models/
+__pycache__/torch_args.cpython-37.pyc
+algorithms/__pycache__/__init__.cpython-37.pyc
+algorithms/__pycache__/maddpg.cpython-37.pyc
+baselines/common/__pycache__/vec_env.cpython-37.pyc
+gym/__pycache__/__init__.cpython-37.pyc
+gym/__pycache__/core.cpython-37.pyc
+gym/__pycache__/error.cpython-37.pyc
+gym/__pycache__/logger.cpython-37.pyc

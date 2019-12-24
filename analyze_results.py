@@ -14,6 +14,7 @@ from pathlib import Path
 from utils.my_plotting import *
 import numpy as np
 import matplotlib
+
 if not sys.platform.startswith('win'):
     matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
@@ -25,8 +26,8 @@ if not sys.platform.startswith('win'):
 
 else:
     # from local
-    # base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
-    base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
+    base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
+    # base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     # base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
     path_to_summary = base_path / "logs\\summary.json"
 
@@ -44,7 +45,9 @@ models_to_compare = [#"1prey_1pred_noCom_noShape_noLand",
                      # "1prey_1pred_noCom_sumShape_noLand",
                      # "2prey_1pred_noCom_noShape_noLand",
                      # "2prey_1pred_noCom_sumShape_noLand",
-                     "2prey_2pred_noCom_sumShape_noLand_withIL_lessIL"
+                     "2prey_2pred_noCom_sumShape_noLand_withIL_lessIL",
+                     "2prey_2pred_noCom_sumShape_noLand_withIL_long_ep",
+                     "play1"
                      ]
 
 num_agents = 5
@@ -164,9 +167,9 @@ if DISPLAY_MEAN_WIN_RATES:
 
 
 if SHOW_RUN:
-    cur_model = 0
+    cur_model = 2
     # see_runs = [ind for ind in range(0, 10)]
-    see_runs = [1,1,1,1,1,1,1,1,1,1]
+    see_runs = [0]*9
     wait = 0.05
     num_rolls = 3
     ep_len = 50

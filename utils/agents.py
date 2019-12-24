@@ -275,5 +275,4 @@ class IL_Controller(object):
                 inj_obs = inj_next_obs
                 injection_step += 1
 
-
         return step + injection_step, eval_win_rates

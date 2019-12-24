@@ -2,7 +2,6 @@ import torch
 import time
 import os, sys, gc
 import numpy as np
-from gym.spaces import Box, Discrete, MultiDiscrete
 from pathlib import Path
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
@@ -54,18 +53,6 @@ if __name__ == '__main__':
         env = make_parallel_env(config)
         eval_env = make_parallel_env(config)
 
-        # add comm to action space:
-        for a_i, a_type in enumerate(env.agent_types):
-            if a_type is "adversary":
-                env.action_space[a_i] = \
-                    {'act': env.action_space[a_i], 'comm': Discrete(config.predators_comm_size)}
-                eval_env.action_space[a_i] = \
-                    {'act': eval_env.action_space[a_i], 'comm': Discrete(config.predators_comm_size)}
-            else:
-                env.action_space[a_i] =\
-                    {'act': env.action_space[a_i], 'comm': Discrete(0)}
-                eval_env.action_space[a_i] = \
-                    {'act': eval_env.action_space[a_i], 'comm': Discrete(0)}
         maddpg = MADDPG.init_from_env(env, config)
         IL_controller = IL_Controller(config)  # imitation learning controller
         replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
@@ -83,6 +70,8 @@ if __name__ == '__main__':
         win_counter = 0
         curr_ep = -1
         eval_win_rates = [0]
+        eps_without_IL = 0
+        eps_without_IL_hist = []
 
         while step < config.n_time_steps:   # total steps to be performed during a single run
             # start a episode due to episode termination\done
@@ -120,21 +109,29 @@ if __name__ == '__main__':
 
                 step += config.n_rollout_threads  # advance the step-counter
 
-                if (len(replay_buffer) >= config.batch_size and
-                        (step % config.IL_inject_every) < config.n_rollout_threads):  # perform IL injection
-                    step, eval_win_rates = \
-                        IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
-                    IL_controller.decay()
+                # if (len(replay_buffer) >= config.batch_size and
+                #         (step % config.IL_inject_every) < config.n_rollout_threads):  # perform IL injection
+                #     step, eval_win_rates = \
+                #         IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
+                #     IL_controller.decay()
 
                 ep_rewards += rewards
                 replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
 
                 if dones.any(): # terminate episode if won! #
                     win_counter += 1
+                    eps_without_IL += 1
                     break
                 obs = next_obs
 
+            # perform IL injection if failed
+            if ep_step == config.episode_length-1 and not dones.any():
+                step, eval_win_rates = \
+                    IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
+                eps_without_IL_hist.append(eps_without_IL)
+                eps_without_IL = 0
             # ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
+
             mean_ep_rewards.append(ep_rewards / config.episode_length)
             all_ep_rewards.append(ep_rewards)
 
@@ -152,6 +149,8 @@ if __name__ == '__main__':
 
         np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards.copy(),
                                                "mean_ep_rewards": mean_ep_rewards.copy()}, True)
+        eps_without_IL_hist.append(eps_without_IL)
+        np.save(run_dir / 'IL_hist', eps_without_IL_hist, True)
         np.save(run_dir / 'win_rates', eval_win_rates, True)
         maddpg.save(run_dir / 'model.pt')
         # env.close()

@@ -2,6 +2,7 @@ import gym
 from gym import spaces
 from gym.envs.registration import EnvSpec
 import numpy as np
+from gym.spaces import Box, Discrete, MultiDiscrete
 
 # environment for all agents in the multiagent world
 # currently code assumes that no agents will be created/destroyed at runtime!
@@ -68,6 +69,15 @@ class MultiAgentEnv(gym.Env):
             obs_dim = len(observation_callback(agent, self.world))
             self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(obs_dim,)))
             agent.action.c = np.zeros(self.world.dim_c)
+
+        # add comm to action space: ##OREN
+        for a_i, ag in enumerate(self.agents):
+            if ag.adversary:
+                self.action_space[a_i] = \
+                    {'act': self.action_space[a_i], 'comm': Discrete(config.predators_comm_size)}
+            else:
+                self.action_space[a_i] =\
+                    {'act': self.action_space[a_i], 'comm': Discrete(0)}
 
         # rendering
         self.shared_viewer = shared_viewer
