@@ -41,16 +41,18 @@ class Arglist:
         controller = "_controllerPray" if self.use_prey_controller else "_DDPGpray"
         shape = "sumShape" if self.shaping else "noShape"
         IL_str = "_withIL" if self.use_IL else "_noIL"
-        extra_str = "_long_ep"
-        players_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred"
-        self.model_name = "./" + players_str + "_noCom_" + shape + "_noLand" + IL_str + controller +extra_str
+        extra_str = "_commBaseLine_long_ep"
+        entities_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred_" + \
+                       str(self.num_landmarks) + "landmarks"
+
+        self.model_name = "./" + entities_str + "_noCom_" + shape + "_noLand" + IL_str + controller + extra_str
         # self.model_name = "./play1"
         self.comments = "FAST DDPG prey. with IL, with comm"
         #########################
         #### Algorithm args: ####
         #########################
         # comm
-        self.predators_comm = False
+        self.predators_comm = True
         self.predators_comm_size = 4 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.symbolic_comm = False
         # Run parameters

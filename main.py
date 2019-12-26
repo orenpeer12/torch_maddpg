@@ -12,7 +12,7 @@ from utils.maddpg_utils import *
 from utils.agents import IL_Controller
 from utils.general_functions import *
 
-# 10/12/19 10:20
+# 26/12/19 10:20
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
@@ -21,9 +21,9 @@ MODE = "RUN"    # "DEBUG"
 if __name__ == '__main__':
     config = Arglist()
     num_runs = config.num_runs
-    run_mannager = running_env_mannager(MODE)
+    run_manager = running_env_mannager(MODE)
     for run_num in range(num_runs):
-        run_mannager.prep_running_env(config, run_num)
+        run_manager.prep_running_env(config, run_num)
 
         if not config.USE_CUDA:
             torch.set_num_threads(config.n_training_threads)
@@ -112,7 +112,7 @@ if __name__ == '__main__':
             all_ep_rewards.append(ep_rewards)
 
             if step % 100 == 0 or (step == config.n_time_steps):    # print progress.
-                run_mannager.printProgressBar(step, start_time, config.n_time_steps, "run" + str(run_num) + ": Steps Done: ",
+                run_manager.printProgressBar(step, start_time, config.n_time_steps, "run" + str(run_num) + ": Steps Done: ",
                                  " Last eval win rate: {0:.2%}".format(eval_win_rates[-1]), 20, "%")
 
             # for a_i, a_ep_rew in enumerate(ep_rews):
@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
         # eps_without_IL_hist.append(eps_without_IL)
         if MODE == "RUN":
-            run_dir = run_mannager.run_dir
+            run_dir = run_manager.run_dir
             np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards.copy(),
                                                    "mean_ep_rewards": mean_ep_rewards.copy()}, True)
             # np.save(run_dir / 'IL_hist', eps_without_IL_hist, True)
