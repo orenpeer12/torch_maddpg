@@ -4,7 +4,8 @@ import gc
 import time
 import numpy as np
 
-class running_env_mannager():
+
+class running_env_manager():
     def __init__(self, MODE):
         self.DEBUG = True if MODE == "DUBUG" else False
         self.run_dir = ""
@@ -38,6 +39,7 @@ class running_env_mannager():
             if run_num is 0: config.print_args()
             print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
             print("results will not be saved!")
+
 
     def printProgressBar(self, iteration, start_time, total, prefix='', suffix='', length=100, fill='█', done=False):
         """
