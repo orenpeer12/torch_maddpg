@@ -1,0 +1,4 @@
+* get as evaluation data also which prey was eaten!
+* modify to GPU...
+* run imitation with communication
+*
