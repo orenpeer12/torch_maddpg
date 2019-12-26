@@ -36,7 +36,7 @@ CLEANUP = False
 # DISPLAY_LOSS = False
 
 DISPLAY_MEAN_RUN_REWARDS = False
-DISPLAY_MEAN_WIN_RATES = True
+DISPLAY_MEAN_WIN_RATES = False
 SHOW_RUN = True
 SMOOTH = True
 
@@ -167,7 +167,7 @@ if DISPLAY_MEAN_WIN_RATES:
 
 
 if SHOW_RUN:
-    cur_model = 2
+    cur_model = 1
     # see_runs = [ind for ind in range(0, 10)]
     see_runs = [0]*9
     wait = 0.05
@@ -181,13 +181,6 @@ if SHOW_RUN:
     config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
     config.load_model_path = model_path._str
     env = make_parallel_env(config)
-    for i, a_type in enumerate(env.agent_types):
-        if a_type is "adversary":
-            env.action_space[i] = \
-                {'act': env.action_space[i], 'comm': Discrete(config.predators_comm_size)}
-        else:
-            env.action_space[i] = \
-                {'act': env.action_space[i], 'comm': Discrete(0)}
 
     for cur_run in see_runs:
         # add comm to action space:

@@ -11,7 +11,7 @@ class MADDPG(object):
     """
     Wrapper class for DDPG-esque (i.e. also MADDPG) agents in multi-agent task
     """
-    def __init__(self, agent_init_params, alg_types,
+    def __init__(self, agent_init_params, alg_types, group_types,
                  gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64, device='cuda:0',
                  discrete_action=False, predators_comm=False, predators_comm_size=0, symbolic_comm=False):
         """
@@ -40,8 +40,8 @@ class MADDPG(object):
                 self.agents.append(DDPGAgent(lr=lr, discrete_action=discrete_action,
                                              hidden_dim=hidden_dim, device=device,
                                              comm=predators_comm if alg_types[ag_i] is 'MADDPG' else False,
-                                             comm_size=predators_comm_size, **params))
-            else:
+                                             comm_size=predators_comm_size, group_type=group_types[ag_i], **params))
+            elif alg_types[ag_i] == "CONTROLLER":
                 self.agents.append(Prey_Controller(**params))
         # for agent in self.agents:
         #     print("An agent of type: ")
@@ -292,6 +292,7 @@ class MADDPG(object):
         agent_init_params = []
         alg_types = [adversary_alg if atype == 'adversary' else agent_alg for
                      atype in env.agent_types]
+        group_types = env.agent_types
         # for acsp, obsp, algtype in zip(env.action_space, env.observation_space,
         #                                alg_types)): # ORIG
         for acsp, obsp, algtype, curr_agent in zip(env.action_space, env.observation_space,
@@ -349,6 +350,7 @@ class MADDPG(object):
         init_dict = {'gamma': gamma, 'tau': tau, 'lr': lr,
                      'hidden_dim': hidden_dim,
                      'alg_types': alg_types,
+                     'group_types': group_types,
                      'agent_init_params': agent_init_params,
                      'discrete_action': config.discrete_action,
                      'device': device,

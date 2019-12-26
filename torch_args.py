@@ -19,35 +19,38 @@ class Arglist:
         #### Environment args: ####
         ###########################
         self.env_id = "simple_tag"
-        self.use_prey_controller = True
-        self.prey_max_speed = 0.5
+        self.use_prey_controller = False
+        # self.prey_max_speed = 0.5
+        self.prey_max_speed = 1.5
         self.pred_max_speed = 1
         self.pred_acc = 3
-        self.prey_acc = 2
-        self.num_landmarks = 0
+        # self.prey_acc = 2
+        self.prey_acc = 4
+        self.num_landmarks = 2
         self.num_predators = 2
         self.num_prey = 2
         self.shaping = True
         # IL
         self.use_IL = True  # imitation learning flag.
-        self.IL_inject_every = 5000 if self.use_IL else 1e9
+        self.IL_inject_every = 5000 if self.use_IL else -1
         self.IL_decay = 0.6
         self.IL_amount = 500
         #######################
         #### General agrs: ####
         #######################
+        controller = "_controllerPray" if self.use_prey_controller else "_DDPGpray"
         shape = "sumShape" if self.shaping else "noShape"
         IL_str = "_withIL" if self.use_IL else "_noIL"
         extra_str = "_long_ep"
         players_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred"
-        # self.model_name = "./" + players_str + "_noCom_" + shape + "_noLand" + IL_str + extra_str
-        self.model_name = "./play1"
-        self.comments = "controller prey. with IL, with comm"
+        self.model_name = "./" + players_str + "_noCom_" + shape + "_noLand" + IL_str + controller +extra_str
+        # self.model_name = "./play1"
+        self.comments = "FAST DDPG prey. with IL, with comm"
         #########################
         #### Algorithm args: ####
         #########################
         # comm
-        self.predators_comm = True
+        self.predators_comm = False
         self.predators_comm_size = 4 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.symbolic_comm = False
         # Run parameters
@@ -72,7 +75,7 @@ class Arglist:
         self.lr = 0.01
         self.tau = 0.01
         # self.agent_alg = "DDPG"
-        self.agent_alg = "CONTROLLER"
+        self.agent_alg = "CONTROLLER" if self.use_prey_controller else "DDPG"
         self.adversary_alg = "MADDPG" # choices=['MADDPG', 'DDPG']
         self.discrete_action = False
         # self.load_model_path = "C:\\git\\torch_maddpg\\models\\simple_tag\\results_predators\\test_model_max_not_min\\run0\\model.pt"

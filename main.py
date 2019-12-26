@@ -2,51 +2,28 @@ import torch
 import time
 import os, sys, gc
 import numpy as np
-from pathlib import Path
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
-from utils.printer import *
 from utils.make_env import make_parallel_env
 from utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
 from torch_args import Arglist
 from utils.maddpg_utils import *
 from utils.agents import IL_Controller
+from utils.general_functions import *
 
 # 10/12/19 10:20
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
-
+MODE = "RUN"    # "DEBUG"
 
 if __name__ == '__main__':
     config = Arglist()
     num_runs = config.num_runs
-
+    run_mannager = running_env_mannager(MODE)
     for run_num in range(num_runs):
-        gc.collect()
-        model_dir = Path('./models') / config.env_id / config.model_name
-        if not model_dir.exists():
-            curr_run = 'run0'
-        else:
-            if MAKE_NEW_LOG:
-                exst_run_nums = [int(str(folder.name).split('run')[1]) for folder in
-                                 model_dir.iterdir() if
-                                 str(folder.name).startswith('run')]
-                if len(exst_run_nums) == 0:
-                    curr_run = 'run0'
-                else:
-                    curr_run = 'run%i' % (max(exst_run_nums) + 1)
-            else:
-                curr_run = 'last_run_override'
-        run_dir = model_dir / curr_run
-        log_dir = run_dir / 'logs'
-        if not log_dir.exists():
-            os.makedirs(log_dir)
-
-        config.save_args(run_dir)
-        if run_num is 0: config.print_args()
-        logger = SummaryWriter(str(log_dir))
+        run_mannager.prep_running_env(config, run_num)
 
         if not config.USE_CUDA:
             torch.set_num_threads(config.n_training_threads)
@@ -70,8 +47,8 @@ if __name__ == '__main__':
         win_counter = 0
         curr_ep = -1
         eval_win_rates = [0]
-        eps_without_IL = 0
-        eps_without_IL_hist = []
+        # eps_without_IL = 0
+        # eps_without_IL_hist = []
 
         while step < config.n_time_steps:   # total steps to be performed during a single run
             # start a episode due to episode termination\done
@@ -109,34 +86,33 @@ if __name__ == '__main__':
 
                 step += config.n_rollout_threads  # advance the step-counter
 
-                # if (len(replay_buffer) >= config.batch_size and
-                #         (step % config.IL_inject_every) < config.n_rollout_threads):  # perform IL injection
-                #     step, eval_win_rates = \
-                #         IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
-                #     IL_controller.decay()
+                if (len(replay_buffer) >= config.batch_size and
+                        (step % config.IL_inject_every) < config.n_rollout_threads):  # perform IL injection
+                    step, eval_win_rates = \
+                        IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
+                    IL_controller.decay()
 
                 ep_rewards += rewards
                 replay_buffer.push(obs, agent_actions, rewards, next_obs, dones)
 
                 if dones.any(): # terminate episode if won! #
                     win_counter += 1
-                    eps_without_IL += 1
+                    # eps_without_IL += 1
                     break
                 obs = next_obs
 
             # perform IL injection if failed
-            if ep_step == config.episode_length-1 and not dones.any():
-                step, eval_win_rates = \
-                    IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
-                eps_without_IL_hist.append(eps_without_IL)
-                eps_without_IL = 0
-            # ep_rews = replay_buffer.get_average_rewards(config.episode_length * config.n_rollout_threads)
+            # if config.use_IL and ep_step == config.episode_length-1 and not dones.any():
+            #     step, eval_win_rates = \
+            #         IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
+            #     eps_without_IL_hist.append(eps_without_IL)
+            #     eps_without_IL = 0
 
             mean_ep_rewards.append(ep_rewards / config.episode_length)
             all_ep_rewards.append(ep_rewards)
 
             if step % 100 == 0 or (step == config.n_time_steps):    # print progress.
-                printProgressBar(step, start_time, config.n_time_steps, "run" + str(run_num) + ": Steps Done: ",
+                run_mannager.printProgressBar(step, start_time, config.n_time_steps, "run" + str(run_num) + ": Steps Done: ",
                                  " Last eval win rate: {0:.2%}".format(eval_win_rates[-1]), 20, "%")
 
             # for a_i, a_ep_rew in enumerate(ep_rews):
@@ -147,13 +123,15 @@ if __name__ == '__main__':
             #     maddpg.save(run_dir / 'incremental' / ('model_ep%i.pt' % (ep_i + 1)))
             #     maddpg.save(run_dir / 'model.pt')
 
-        np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards.copy(),
-                                               "mean_ep_rewards": mean_ep_rewards.copy()}, True)
-        eps_without_IL_hist.append(eps_without_IL)
-        np.save(run_dir / 'IL_hist', eps_without_IL_hist, True)
-        np.save(run_dir / 'win_rates', eval_win_rates, True)
-        maddpg.save(run_dir / 'model.pt')
+        # eps_without_IL_hist.append(eps_without_IL)
+        if MODE == "RUN":
+            run_dir = run_mannager.run_dir
+            np.save(run_dir / 'episodes_rewards', {"tot_ep_rewards": all_ep_rewards.copy(),
+                                                   "mean_ep_rewards": mean_ep_rewards.copy()}, True)
+            # np.save(run_dir / 'IL_hist', eps_without_IL_hist, True)
+            np.save(run_dir / 'win_rates', eval_win_rates, True)
+            maddpg.save(run_dir / 'model.pt')
         # env.close()
-        logger.export_scalars_to_json(str(log_dir / 'summary.json'))
-        logger.close()
+        # logger.export_scalars_to_json(str(log_dir / 'summary.json'))
+        # logger.close()
 

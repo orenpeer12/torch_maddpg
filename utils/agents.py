@@ -17,7 +17,8 @@ class DDPGAgent(object):
     critic, exploration noise)
     """
     def __init__(self, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
-                 lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=False, symbolic_comm=True):
+                 lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=None, symbolic_comm=None,
+                 group_type=None):
         """
         Inputs:
             num_in_pol (int): number of dimensions for policy input
@@ -25,6 +26,7 @@ class DDPGAgent(object):
             num_in_critic (int): number of dimensions for critic input
         """
         self.device = device
+        self.group_type = group_type
         # self.device = "cpu"
         self.comm = comm
         self.comm_size = comm_size
@@ -126,6 +128,7 @@ class Prey_Controller(object):
         self.policy = self.target_policy = self.step
         # just to specify it has no learning capabilities...
         self.controller = True
+        self.group_type = "agent"
         return
 
     def reset_noise(self):
@@ -258,10 +261,10 @@ class IL_Controller(object):
                                   for ind in range(self.n_agents)]
                 inj_torch_agent_actions = []
                 for curr_agent, curr_obs in zip(maddpg.agents, inj_torch_obs):
-                    if hasattr(curr_agent, "controller"):    # curr agent is a controller. use it
-                        inj_torch_agent_actions.append(curr_agent.step(curr_obs))
-                    else:
+                    if curr_agent.group_type == "adversary":
                         inj_torch_agent_actions.append(self.step_IL(curr_obs, target_prey_idx[curr_agent]))
+                    else:
+                        inj_torch_agent_actions.append(curr_agent.step(curr_obs))
 
                 agent_actions = [ac.data.numpy() for ac in inj_torch_agent_actions]
                 actions = [[ac[idx] for ac in agent_actions] for idx in range(self.n_rollout_threads)]
