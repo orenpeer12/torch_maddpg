@@ -10,7 +10,7 @@ from utils.maddpg_utils import *
 from utils.agents import IL_Controller
 from utils.general_functions import *
 
-# 27/12/19 10:20
+# 27/12/19 12:20
 do_log = False
 MAKE_NEW_LOG = True
 LOAD_MODEL = False
