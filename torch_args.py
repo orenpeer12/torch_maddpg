@@ -46,7 +46,7 @@ class Arglist:
                        str(self.num_landmarks) + "landmarks"
 
         self.model_name = "./" + entities_str + "_noCom_" + shape + "_noLand" + IL_str + controller + extra_str
-        # self.model_name = "./play1"
+        self.model_name = "./play1"
         self.comments = "FAST DDPG prey. with IL, with comm"
         #########################
         #### Algorithm args: ####
