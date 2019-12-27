@@ -47,7 +47,8 @@ models_to_compare = [#"1prey_1pred_noCom_noShape_noLand",
                      # "2prey_1pred_noCom_sumShape_noLand",
                      "2prey_2pred_noCom_sumShape_noLand_withIL_lessIL",
                      "2prey_2pred_noCom_sumShape_noLand_withIL_long_ep",
-                     "play1"
+                     "play1",
+                     "1prey_2pred_0landmarks_noCom_noShape_noLand_withIL_DDPGpray_long_ep"
                      ]
 
 num_agents = 5
@@ -167,7 +168,7 @@ if DISPLAY_MEAN_WIN_RATES:
 
 
 if SHOW_RUN:
-    cur_model = 1
+    cur_model = 3
     # see_runs = [ind for ind in range(0, 10)]
     see_runs = [0]*9
     wait = 0.05

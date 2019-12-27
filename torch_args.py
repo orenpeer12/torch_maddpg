@@ -21,17 +21,17 @@ class Arglist:
         self.env_id = "simple_tag"
         self.use_prey_controller = False
         # self.prey_max_speed = 0.5
-        self.prey_max_speed = 1.5
+        self.prey_max_speed = 1.3
         self.pred_max_speed = 1
         self.pred_acc = 3
         # self.prey_acc = 2
         self.prey_acc = 4
-        self.num_landmarks = 2
+        self.num_landmarks = 0
         self.num_predators = 2
-        self.num_prey = 2
+        self.num_prey = 1
         self.shaping = True
         # IL
-        self.use_IL = True  # imitation learning flag.
+        self.use_IL = False  # imitation learning flag.
         self.IL_inject_every = 5000 if self.use_IL else -1
         self.IL_decay = 0.6
         self.IL_amount = 500
@@ -41,7 +41,7 @@ class Arglist:
         controller = "_controllerPray" if self.use_prey_controller else "_DDPGpray"
         shape = "sumShape" if self.shaping else "noShape"
         IL_str = "_withIL" if self.use_IL else "_noIL"
-        extra_str = "_commBaseLine_long_ep"
+        extra_str = "_long_ep"
         entities_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred_" + \
                        str(self.num_landmarks) + "landmarks"
 
@@ -52,7 +52,7 @@ class Arglist:
         #### Algorithm args: ####
         #########################
         # comm
-        self.predators_comm = True
+        self.predators_comm = False
         self.predators_comm_size = 4 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.symbolic_comm = False
         # Run parameters

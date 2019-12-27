@@ -21,7 +21,7 @@ MODE = "RUN"    # "DEBUG"
 if __name__ == '__main__':
     config = Arglist()
     num_runs = config.num_runs
-    run_manager = running_env_mannager(MODE)
+    run_manager = running_env_manager(MODE)
     for run_num in range(num_runs):
         run_manager.prep_running_env(config, run_num)
 
