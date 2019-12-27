@@ -2,8 +2,6 @@ import torch
 import time
 import os, sys, gc
 import numpy as np
-from torch.autograd import Variable
-from tensorboardX import SummaryWriter
 from utils.make_env import make_parallel_env
 from utils.buffer import ReplayBuffer
 from algorithms.maddpg import MADDPG
@@ -21,7 +19,7 @@ MODE = "RUN"    # "DEBUG"
 if __name__ == '__main__':
     config = Arglist()
     num_runs = config.num_runs
-    run_manager = running_env_mannager(MODE)
+    run_manager = running_env_manager(MODE)
     for run_num in range(num_runs):
         run_manager.prep_running_env(config, run_num)
 

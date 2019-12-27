@@ -73,6 +73,7 @@ fabric.properties
 # Oren
 results_predators/
 models/
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
