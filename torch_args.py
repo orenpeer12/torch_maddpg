@@ -1,6 +1,6 @@
 import _pickle as pickle
 import json
-from json import JSONEncoder
+import time
 
 class Arglist:
     def __init__(self):
@@ -26,7 +26,7 @@ class Arglist:
         self.pred_acc = 3
         # self.prey_acc = 2
         self.prey_acc = 4
-        self.num_landmarks = 0
+        self.num_landmarks = 2
         self.num_predators = 2
         self.num_prey = 1
         self.shaping = True
@@ -46,8 +46,8 @@ class Arglist:
                        str(self.num_landmarks) + "landmarks"
 
         self.model_name = "./" + entities_str + "_noCom_" + shape + "_noLand" + IL_str + controller + extra_str
-        self.model_name = "./play1"
-        self.comments = "FAST DDPG prey. with IL, with comm"
+        # self.model_name = "./play1"
+        self.comments = "FAST DDPG prey. with IL, no comm, making sure bug is not in IL"
         #########################
         #### Algorithm args: ####
         #########################
@@ -57,7 +57,7 @@ class Arglist:
         self.symbolic_comm = False
         # Run parameters
         self.buffer_length = int(1e6)
-        self.num_runs = 10
+        self.num_runs = 2
         self.n_episodes = 20000
         # self.n_episodes = 25000
         # self.n_episodes = 50000
@@ -103,6 +103,7 @@ class Arglist:
 
         for arg in self.__dict__:
             text_file.write(arg + " = " + str(self.__dict__[arg]) + "\n")
+        text_file.write(time.asctime())
         text_file.close()
 
     def load_args(self, path_to_args):

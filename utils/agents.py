@@ -16,7 +16,7 @@ class DDPGAgent(object):
     General class for DDPG agents (policy, critic, target policy, target
     critic, exploration noise)
     """
-    def __init__(self, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
+    def __init__(self, ag_id, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
                  lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=None, symbolic_comm=None,
                  group_type=None):
         """
@@ -25,6 +25,7 @@ class DDPGAgent(object):
             num_out_pol (int): number of dimensions for policy output
             num_in_critic (int): number of dimensions for critic input
         """
+        self.ag_id = ag_id
         self.device = device
         self.group_type = group_type
         # self.device = "cpu"

@@ -7,7 +7,7 @@ import numpy as np
 
 class running_env_manager():
     def __init__(self, MODE):
-        self.DEBUG = True if MODE == "DUBUG" else False
+        self.DEBUG = True if MODE == 'DEBUG' else False
         self.run_dir = ""
 
     def prep_running_env(self, config,run_num):
@@ -35,10 +35,18 @@ class running_env_manager():
             # logger = SummaryWriter(str(log_dir))
         else:
             print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
-            print("results will not be saved!")
-            if run_num is 0: config.print_args()
             print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
             print("results will not be saved!")
+            print("results will not be saved!")
+            print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
+            print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
+            if run_num is 0: config.print_args()
+            print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
+            print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
+            print("results will not be saved!")
+            print("results will not be saved!")
+            print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
+            print("DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! DEBUG MODE!! ")
 
 
     def printProgressBar(self, iteration, start_time, total, prefix='', suffix='', length=100, fill='█', done=False):

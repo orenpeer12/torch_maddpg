@@ -37,7 +37,7 @@ class MADDPG(object):
         self.agents = []
         for ag_i, params in enumerate(agent_init_params):
             if alg_types[ag_i] in ["MADDPG", "DDPG"]:
-                self.agents.append(DDPGAgent(lr=lr, discrete_action=discrete_action,
+                self.agents.append(DDPGAgent(ag_id=ag_i, lr=lr, discrete_action=discrete_action,
                                              hidden_dim=hidden_dim, device=device,
                                              comm=predators_comm if alg_types[ag_i] is 'MADDPG' else False,
                                              comm_size=predators_comm_size, group_type=group_types[ag_i], **params))
@@ -316,13 +316,12 @@ class MADDPG(object):
             #     for oacsp in env.action_space:
             #         num_in_critic += get_shape(oacsp)
 
-            if algtype == "MADDPG":
-                some_maddpg_agent_idx = alg_types.index("MADDPG")
-                num_in_critic = env.observation_space[some_maddpg_agent_idx].shape[0]
+            if group_types[curr_agent] == 'adversary':
+                num_in_critic = env.observation_space[curr_agent].shape[0]
                 # for oobsp in env.observation_space:
                 #     num_in_critic += oobsp.shape[0]
                 for i, oobsp in enumerate(env.observation_space):  # OREN - share only meaningful info.
-                    if alg_types[i] is "MADDPG" and i is not curr_agent:
+                    if group_types[i] is 'adversary' and i is not curr_agent:
                         num_in_critic += 2
                 for oacsp in env.action_space:
                     num_in_critic += \

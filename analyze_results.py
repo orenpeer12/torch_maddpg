@@ -26,7 +26,8 @@ if not sys.platform.startswith('win'):
 
 else:
     # from local
-    base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
+    # base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
+    base_path = Path("C:\\git\\results_predators\\baseline_winRate")
     # base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     # base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
     path_to_summary = base_path / "logs\\summary.json"
@@ -48,10 +49,54 @@ models_to_compare = [#"1prey_1pred_noCom_noShape_noLand",
                      "2prey_2pred_noCom_sumShape_noLand_withIL_lessIL",
                      "2prey_2pred_noCom_sumShape_noLand_withIL_long_ep",
                      "play1",
-                     "1prey_2pred_0landmarks_noCom_noShape_noLand_withIL_DDPGpray_long_ep"
+                     "1prey_2pred_2landmarks_noCom_sumShape_noLand_noIL_DDPGpray_long_ep"
+
                      ]
 
 num_agents = 5
+
+if SHOW_RUN:
+    cur_model = 3
+    # see_runs = [ind for ind in range(0, 10)]
+    see_runs = [0]*9
+    wait = 0.05
+    num_rolls = 3
+    ep_len = 50
+    config = Arglist()
+
+    config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
+    model_path = base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])) / "model.pt"
+    print(model_path)
+    config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
+    config.load_model_path = model_path._str
+    env = make_parallel_env(config)
+
+    for cur_run in see_runs:
+        # add comm to action space:
+
+        maddpg = MADDPG.init_from_save(config.load_model_path)
+        # show some examples:
+        obs = env.reset()
+        # env.env._render("human", True)
+        maddpg.prep_rollouts(device='cpu')
+        for step in range(ep_len):
+            env.env._render("human", False)
+            time.sleep(wait)
+            # rearrange observations to be per agent, and convert to torch Variable
+            torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
+                                  requires_grad=False)
+                         for i in range(maddpg.nagents)]
+            # get actions as torch Variables
+            torch_agent_actions = maddpg.step(torch_obs, explore=True)
+            # convert actions to numpy arrays
+            agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
+            # rearrange actions to be per environment
+            actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
+            next_obs, rewards, dones, infos = env.step(actions)
+            obs = next_obs
+        # env.env._render("human", True)
+        # env.get_viewer().close()
+        # env.close()
 
 
 if DISPLAY_MEAN_RUN_REWARDS:
@@ -165,51 +210,6 @@ if DISPLAY_MEAN_WIN_RATES:
     plt.legend([m.replace("_contAct_thinObs", "").replace("agent", "prey") for m in models_to_compare])
     plt.show()
     set_default_mpl()
-
-
-if SHOW_RUN:
-    cur_model = 3
-    # see_runs = [ind for ind in range(0, 10)]
-    see_runs = [0]*9
-    wait = 0.05
-    num_rolls = 3
-    ep_len = 50
-    config = Arglist()
-
-    config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
-    model_path = base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])) / "model.pt"
-    print(model_path)
-    config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
-    config.load_model_path = model_path._str
-    env = make_parallel_env(config)
-
-    for cur_run in see_runs:
-        # add comm to action space:
-
-        maddpg = MADDPG.init_from_save(config.load_model_path)
-        # show some examples:
-        obs = env.reset()
-        # env.env._render("human", True)
-        maddpg.prep_rollouts(device='cpu')
-        for step in range(ep_len):
-            env.env._render("human", False)
-            time.sleep(wait)
-            # rearrange observations to be per agent, and convert to torch Variable
-            torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
-                                  requires_grad=False)
-                         for i in range(maddpg.nagents)]
-            # get actions as torch Variables
-            torch_agent_actions = maddpg.step(torch_obs, explore=True)
-            # convert actions to numpy arrays
-            agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
-            # rearrange actions to be per environment
-            actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
-            next_obs, rewards, dones, infos = env.step(actions)
-            obs = next_obs
-        # env.env._render("human", True)
-        # env.get_viewer().close()
-        # env.close()
-
 #
 #
 #

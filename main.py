@@ -10,11 +10,9 @@ from utils.maddpg_utils import *
 from utils.agents import IL_Controller
 from utils.general_functions import *
 
-# 27/12/19 12:20
-do_log = False
-MAKE_NEW_LOG = True
-LOAD_MODEL = False
-MODE = "RUN"    # "DEBUG"
+# 27/12/19 12:39
+# MODE = "RUN"    # "DEBUG"
+MODE = "DEBUG"
 
 if __name__ == '__main__':
     config = Arglist()
@@ -84,7 +82,7 @@ if __name__ == '__main__':
 
                 step += config.n_rollout_threads  # advance the step-counter
 
-                if (len(replay_buffer) >= config.batch_size and
+                if (len(replay_buffer) >= config.batch_size and config.use_IL and
                         (step % config.IL_inject_every) < config.n_rollout_threads):  # perform IL injection
                     step, eval_win_rates = \
                         IL_controller.IL_inject(maddpg, replay_buffer, eval_env, step, config, eval_win_rates)
