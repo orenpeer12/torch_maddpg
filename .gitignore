@@ -72,8 +72,10 @@ fabric.properties
 
 # Oren
 results_predators/
+gym/
 models/
 .idea
+*.pyc 
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

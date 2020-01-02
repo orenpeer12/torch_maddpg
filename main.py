@@ -10,9 +10,9 @@ from utils.maddpg_utils import *
 from utils.agents import IL_Controller
 from utils.general_functions import *
 
-# 27/12/19 12:39
-# MODE = "RUN"    # "DEBUG"
-MODE = "DEBUG"
+# 02/01/20 09:18
+MODE = "RUN"    # "DEBUG"
+# MODE = "DEBUG"
 
 if __name__ == '__main__':
     config = Arglist()
@@ -59,6 +59,9 @@ if __name__ == '__main__':
             maddpg.reset_noise()
 
             for ep_step in range(config.episode_length):    # 1 episode loop. ends due to term\done
+                # env.env._render("human", False)
+                # time.sleep(0.05)
+                if step == config.n_time_steps: break
                 torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, ind])),
                                       requires_grad=False)
                              for ind in range(maddpg.nagents)]
@@ -66,7 +69,7 @@ if __name__ == '__main__':
                 torch_agent_actions = maddpg.step(torch_obs, explore=True)
                 # convert actions to numpy arrays
                 # agent_actions = [ac.detach().cpu().data.numpy() for ac in torch_agent_actions]
-                agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
+                agent_actions = [ac.cpu().data.numpy() for ac in torch_agent_actions]
                 # rearrange actions to be per environment
                 actions = [[ac[idx] for ac in agent_actions] for idx in range(config.n_rollout_threads)]
                 next_obs, rewards, dones, infos = env.step(actions)
@@ -78,7 +81,7 @@ if __name__ == '__main__':
 
                 if (len(replay_buffer) >= config.batch_size and
                         (step % config.steps_per_update) < config.n_rollout_threads):   # perform training
-                    train_model(maddpg, config, replay_buffer)
+                        train_model(maddpg, config, replay_buffer)
 
                 step += config.n_rollout_threads  # advance the step-counter
 

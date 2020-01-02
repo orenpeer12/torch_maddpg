@@ -19,16 +19,20 @@ class Arglist:
         #### Environment args: ####
         ###########################
         self.env_id = "simple_tag"
+        self.bound_world = False
         self.use_prey_controller = False
         # self.prey_max_speed = 0.5
-        self.prey_max_speed = 1.3
+        # self.prey_max_speed = 1.3
+        self.prey_max_speed = 0.6
         self.pred_max_speed = 1
         self.pred_acc = 3
         # self.prey_acc = 2
-        self.prey_acc = 4
-        self.num_landmarks = 2
-        self.num_predators = 2
+        # self.prey_acc = 4
+        self.prey_acc = 3
+        self.num_landmarks = 0
+        ##
         self.num_prey = 1
+        self.num_predators = 3
         self.shaping = True
         # IL
         self.use_IL = False  # imitation learning flag.
@@ -41,13 +45,14 @@ class Arglist:
         controller = "_controllerPray" if self.use_prey_controller else "_DDPGpray"
         shape = "sumShape" if self.shaping else "noShape"
         IL_str = "_withIL" if self.use_IL else "_noIL"
-        extra_str = "_long_ep"
+        extra_str = "_SlowPrey"
+        walls = "_withWalls" if self.bound_world else "_noWalls"
         entities_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred_" + \
-                       str(self.num_landmarks) + "landmarks"
+                       str(self.num_landmarks) + "landmarks" + walls
 
         self.model_name = "./" + entities_str + "_noCom_" + shape + "_noLand" + IL_str + controller + extra_str
-        # self.model_name = "./play1"
-        self.comments = "FAST DDPG prey. with IL, no comm, making sure bug is not in IL"
+        # self.model_name = "./debug"
+        self.comments = ""
         #########################
         #### Algorithm args: ####
         #########################
@@ -57,7 +62,7 @@ class Arglist:
         self.symbolic_comm = False
         # Run parameters
         self.buffer_length = int(1e6)
-        self.num_runs = 2
+        self.num_runs = 10
         self.n_episodes = 20000
         # self.n_episodes = 25000
         # self.n_episodes = 50000

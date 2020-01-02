@@ -321,7 +321,7 @@ class MADDPG(object):
                 # for oobsp in env.observation_space:
                 #     num_in_critic += oobsp.shape[0]
                 for i, oobsp in enumerate(env.observation_space):  # OREN - share only meaningful info.
-                    if group_types[i] is 'adversary' and i is not curr_agent:
+                    if group_types[i] is 'adversary' and (i is not curr_agent):
                         num_in_critic += 2
                 for oacsp in env.action_space:
                     num_in_critic += \

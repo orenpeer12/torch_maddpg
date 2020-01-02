@@ -17,7 +17,7 @@ class DDPGAgent(object):
     critic, exploration noise)
     """
     def __init__(self, ag_id, num_in_pol, num_out_pol, num_in_critic, hidden_dim=64,
-                 lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=None, symbolic_comm=None,
+                 lr=0.01, discrete_action=True, device="cuda:0", comm_size=0, comm=False, symbolic_comm=None,
                  group_type=None):
         """
         Inputs:
@@ -99,7 +99,7 @@ class DDPGAgent(object):
                 #     action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()),
                 #                        requires_grad=False)[:2]
                 # else:
-                action += Variable(Tensor(self.exploration.noise()), requires_grad=False)
+                action += Variable(Tensor(self.exploration.noise()), requires_grad=False).to(self.device)
             # action[:, :-self.comm_size] = action[:, :-self.comm_size].clamp(-1, 1)
         return action.clamp(-1, 1)
 
@@ -236,13 +236,15 @@ class IL_Controller(object):
         # import time
         injection_step = 0
 
-        while injection_step < self.IL_amount:  # total steps to be injected to buffer
+        while injection_step < self.IL_amount and step<config.n_time_steps:  # total steps to be injected to buffer
             inj_obs = eval_env.reset()
             maddpg_agents_idx = [i for i, x in enumerate(maddpg.alg_types) if x == "MADDPG"]
             target_prey_idx = {ag: random.choice(np.arange(self.num_prey)) for
                 ag, ix in zip([maddpg.agents[idx] for idx in maddpg_agents_idx], range(config.num_predators))}
 
             for inj_ep_step in range(self.ep_len):
+                if step == config.n_time_steps-1:
+                    break
                 # eval_env.env._render("human", False)
                 # time.sleep(0.05)
                 if injection_step == self.IL_amount:

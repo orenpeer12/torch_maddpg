@@ -1,4 +1,8 @@
 * get as evaluation data also which prey was eaten!
-* modify to GPU...
+* modify to GPU... (probably done...)
 * run imitation with communication
-*
+* init prey with random max-speed (Aviv)
+
+Tom-
+Run episodes with increasing amount of channels.and see if comm helps or not. use diversity of prey-speeds.
+* comm for meta learning?

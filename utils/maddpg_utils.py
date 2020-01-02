@@ -31,7 +31,7 @@ def eval_model(maddpg, eval_env, ep_len, num_steps, rollout_threads, display=Fal
             eval_torch_obs = [Variable(torch.Tensor(np.vstack(eval_obs[:, ind])), requires_grad=False)
                               for ind in range(maddpg.nagents)]
             eval_torch_agent_actions = maddpg.step(eval_torch_obs, explore=True)
-            eval_agent_actions = [ac.data.numpy() for ac in eval_torch_agent_actions]
+            eval_agent_actions = [ac.cpu().data.numpy() for ac in eval_torch_agent_actions]
             eval_actions = [[ac[idx] for ac in eval_agent_actions] for idx in range(rollout_threads)]
             eval_next_obs, eval_rewards, eval_dones, eval_infos = eval_env.step(eval_actions)
             if eval_dones.any():  # terminate episode if won!

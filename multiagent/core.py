@@ -26,7 +26,7 @@ class Action(object):
 
 class Wall(object):
     def __init__(self, orient='H', axis_pos=0.0, endpoints=(-1, 1), width=0.1,
-                 hard=True):
+                 hard=False):
         # orientation: 'H'orizontal or 'V'ertical
         self.orient = orient
         # position along axis which wall lays on (y-axis for H, x-axis for V)
@@ -256,6 +256,7 @@ class World(object):
             agent.state.c = agent.action.c + noise      
 
     # get collision forces for any contact between two entities
+
     def get_entity_collision_force(self, ia, ib):
         entity_a = self.entities[ia]
         entity_b = self.entities[ib]

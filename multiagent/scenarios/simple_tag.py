@@ -1,5 +1,5 @@
 import numpy as np
-from multiagent.core import World, Agent, Landmark
+from multiagent.core import World, Agent, Landmark, Wall
 from multiagent.scenario import BaseScenario
 
 class Scenario(BaseScenario):
@@ -13,6 +13,13 @@ class Scenario(BaseScenario):
         num_predators = config.num_predators
         num_agents = num_predators + num_prey
         num_landmarks = config.num_landmarks
+        # add walls
+        if config.bound_world:
+            world.walls.append(Wall(orient='H', axis_pos=1.3, endpoints=(-2, 2), width=0.2, hard=False))
+            world.walls.append(Wall(orient='H', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=False))
+            world.walls.append(Wall(orient='V', axis_pos=1.3, endpoints=(-2, 2), width=0.2, hard=False))
+            world.walls.append(Wall(orient='V', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=False))
+        world.agents = [Agent() for i in range(num_agents)]
         # add agents
         world.agents = [Agent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):

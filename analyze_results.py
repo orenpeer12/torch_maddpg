@@ -27,9 +27,9 @@ if not sys.platform.startswith('win'):
 else:
     # from local
     # base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
-    base_path = Path("C:\\git\\results_predators\\baseline_winRate")
+    # base_path = Path("C:\\git\\results_predators\\baseline_winRate")
     # base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
-    # base_path = "C:\\git\\torch_maddpg\\results_predators\\test_model_max_not_min"
+    base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     path_to_summary = base_path / "logs\\summary.json"
 
 
@@ -42,26 +42,19 @@ SHOW_RUN = True
 SMOOTH = True
 
 # models_to_compare = ["play1"]
-models_to_compare = [#"1prey_1pred_noCom_noShape_noLand",
-                     # "1prey_1pred_noCom_sumShape_noLand",
-                     # "2prey_1pred_noCom_noShape_noLand",
-                     # "2prey_1pred_noCom_sumShape_noLand",
-                     "2prey_2pred_noCom_sumShape_noLand_withIL_lessIL",
-                     "2prey_2pred_noCom_sumShape_noLand_withIL_long_ep",
-                     "play1",
-                     "1prey_2pred_2landmarks_noCom_sumShape_noLand_noIL_DDPGpray_long_ep"
-
-                     ]
+# models_to_compare = ["1prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_withIL_controllerPray_SlowPrey"]
+# models_to_compare = ["1prey_1pred_0landmarks_withWalls_noCom_sumShape_noLand_noIL_DDPGpray_SlowPrey"]
+models_to_compare = ["1prey_3pred_0landmarks)noWalls_noCom_sumShape_noLand_noIL_DDPGpray_SlowPrey"]
 
 num_agents = 5
 
 if SHOW_RUN:
-    cur_model = 3
+    cur_model = 0
     # see_runs = [ind for ind in range(0, 10)]
-    see_runs = [0]*9
+    see_runs = [0]
     wait = 0.05
     num_rolls = 3
-    ep_len = 50
+    ep_len = 500
     config = Arglist()
 
     config.load_args(base_path / models_to_compare[cur_model] / ("run" + str(see_runs[0])))
