@@ -1,8 +1,8 @@
 * get as evaluation data also which prey was eaten!
-* modify to GPU... (probably done...)
-* run imitation with communication
+* modify to GPU...
 * init prey with random max-speed (Aviv)
-
+* try and HIDE AWAY x or y coordinates of prey to one of the agents...
 Tom-
 Run episodes with increasing amount of channels.and see if comm helps or not. use diversity of prey-speeds.
 * comm for meta learning?
+* dont terminate when 1 prey touches. let them run some more so they learn to chase th prey!

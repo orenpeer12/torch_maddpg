@@ -218,13 +218,21 @@ class IL_Controller(object):
         self.ep_len = config.episode_length
         self.n_agents = config.num_predators + config.num_prey
         self.n_rollout_threads = config.n_rollout_threads
+        self.com = config.predators_comm
+        self.com_size = config.predators_comm_size
+        com_agent_msg = np.arange(0, config.num_prey)
+        com_agent_msg = com_agent_msg - com_agent_msg.mean()
+        com_agent_msg /= com_agent_msg.max()
+        self.com_agent_msg = com_agent_msg
+
 
     def step_IL(self, obs, target_prey_idx, explore=False):
         # thin_obs = obs.reshape((obs.shape[-1]))
         prey_obs_idx = 4 + self.num_obstacles * 2 + (self.num_predators - 1) * 2 + target_prey_idx*2
         prey_loc = obs[:,  prey_obs_idx: prey_obs_idx + 2]
         if not self.discrete_action:
-            return prey_loc / torch.norm(prey_loc).clamp(-1, 1)
+            ret = prey_loc / torch.norm(prey_loc).clamp(-1, 1)
+            return ret if not self.com else torch.cat([ret, torch.tensor([[self.com_agent_msg[target_prey_idx]]]).float()], dim=1)
 
     def decay(self):
         self.IL_amount = int(self.IL_amount * self.IL_decay)
@@ -241,7 +249,6 @@ class IL_Controller(object):
             maddpg_agents_idx = [i for i, x in enumerate(maddpg.alg_types) if x == "MADDPG"]
             target_prey_idx = {ag: random.choice(np.arange(self.num_prey)) for
                 ag, ix in zip([maddpg.agents[idx] for idx in maddpg_agents_idx], range(config.num_predators))}
-
             for inj_ep_step in range(self.ep_len):
                 if step == config.n_time_steps-1:
                     break

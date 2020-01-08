@@ -62,6 +62,10 @@ def make_parallel_env(config):
     def get_env_fn(config):
         def init_env(config):
             env = make_env(config.env_id, config, discrete_action=config.discrete_action)
+            # if config.rand_prey_speed:
+            #     for agent in env.world.agents:
+            #         if not agent.adversary:
+            #             agent.max_speed = 0.4 + np.random.rand()
             # env.seed(seed + rank * 1000)
             # np.random.seed(seed + rank * 1000)
             return env

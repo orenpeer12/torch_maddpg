@@ -70,7 +70,7 @@ class MADDPG(object):
 
     def take_only_new_info(self, agent_idx, some_obs):
         new_info_obs = [other_obs[:, 0:2] for i, other_obs in enumerate(some_obs) if
-                        i is not agent_idx and self.alg_types[i] is "MADDPG"]
+                        i is not agent_idx and self.agents[i].group_type is 'adversary']
         # add them to the current agent observation
         new_info_obs.append(some_obs[agent_idx])
         return new_info_obs

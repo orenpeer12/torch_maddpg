@@ -19,46 +19,50 @@ class Arglist:
         #### Environment args: ####
         ###########################
         self.env_id = "simple_tag"
-        self.bound_world = False
+        self.bound_world = True
         self.use_prey_controller = False
         # self.prey_max_speed = 0.5
         # self.prey_max_speed = 1.3
-        self.prey_max_speed = 0.6
+        # self.prey_max_speed = 0.6
+        self.prey_max_speed = 1
         self.pred_max_speed = 1
+        self.rand_prey_speed = True
         self.pred_acc = 3
         # self.prey_acc = 2
         # self.prey_acc = 4
         self.prey_acc = 3
         self.num_landmarks = 0
         ##
-        self.num_prey = 1
-        self.num_predators = 3
-        self.shaping = True
+        self.num_prey = 2
+        self.num_predators = 2
+        self.shaping = False
         # IL
         self.use_IL = False  # imitation learning flag.
+        self.predators_comm = True
+        self.predators_comm_size = 1 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.IL_inject_every = 5000 if self.use_IL else -1
         self.IL_decay = 0.6
         self.IL_amount = 500
         #######################
         #### General agrs: ####
         #######################
-        controller = "_controllerPray" if self.use_prey_controller else "_DDPGpray"
-        shape = "sumShape" if self.shaping else "noShape"
+        comm = "_withCom{}".format(self.predators_comm_size) if self.predators_comm else "_noCom"
+        speed = "_SameSpeedPrey" if self.prey_max_speed == self.pred_max_speed else "_SlowPrey" if self.prey_max_speed < self.pred_max_speed else "_FastPrey"
+        speed = speed if not self.rand_prey_speed else "_randPreySpeed"
+        controller = "_controllerPrey" if self.use_prey_controller else "_DDPGprey"
+        shape = "_sumShape" if self.shaping else "_noShape"
         IL_str = "_withIL" if self.use_IL else "_noIL"
-        extra_str = "_SlowPrey"
+        extra_str = "_randomPreySpeed"
         walls = "_withWalls" if self.bound_world else "_noWalls"
         entities_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred_" + \
                        str(self.num_landmarks) + "landmarks" + walls
 
-        self.model_name = "./" + entities_str + "_noCom_" + shape + "_noLand" + IL_str + controller + extra_str
+        self.model_name = "./" + entities_str + comm + shape + IL_str + controller + speed + extra_str
         # self.model_name = "./debug"
         self.comments = ""
         #########################
         #### Algorithm args: ####
         #########################
-        # comm
-        self.predators_comm = False
-        self.predators_comm_size = 4 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.symbolic_comm = False
         # Run parameters
         self.buffer_length = int(1e6)
@@ -77,7 +81,6 @@ class Arglist:
         self.final_noise_scale = 0.0
         self.save_interval = 1000
         self.hidden_dim = 64
-
         self.gamma = 0.95
         self.lr = 0.01
         self.tau = 0.01
@@ -118,12 +121,6 @@ class Arglist:
         for k in json_data:
             self.__setattr__(k, json_data[k])
 
-    # def load_args(self, path_to_args):
-    #     import pathlib
-    #     pathlib.PureWindowsPath(path_to_args)
-    #     with open(pathlib.PureWindowsPath(path_to_args), 'rb') as input:
-    #         loaded = input.read()
-    #     return pickle.loads(loaded)
 
     def print_args(self):
         for arg in self.__dict__:

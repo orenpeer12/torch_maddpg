@@ -6,6 +6,7 @@ class Scenario(BaseScenario):
     def make_world(self, config):
         self.shaping = config.shaping
         self.predators_comm = config.predators_comm
+        self.rand_prey_speed = config.rand_prey_speed
         world = World()
         # set any world properties first
         world.dim_c = config.predators_comm_size if config.predators_comm else 0
@@ -19,7 +20,7 @@ class Scenario(BaseScenario):
             world.walls.append(Wall(orient='H', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=False))
             world.walls.append(Wall(orient='V', axis_pos=1.3, endpoints=(-2, 2), width=0.2, hard=False))
             world.walls.append(Wall(orient='V', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=False))
-        world.agents = [Agent() for i in range(num_agents)]
+
         # add agents
         world.agents = [Agent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):
@@ -52,6 +53,10 @@ class Scenario(BaseScenario):
         return world
 
     def reset_world(self, world):
+        if self.rand_prey_speed:
+            for agent in world.agents:
+                if not agent.adversary:
+                    agent.max_speed = 0.4 + np.random.rand()
         # random properties for agents
         for i, agent in enumerate(world.agents):
             agent.color = \
@@ -152,7 +157,6 @@ class Scenario(BaseScenario):
         for entity in world.landmarks:
             if not entity.boundary:
                 entity_pos.append(entity.state.p_pos - agent.state.p_pos)
-                # entity_pos.append(np.array([11, 11]))
         # communication of all other agents
         comm = []
         other_pos = []
@@ -161,23 +165,29 @@ class Scenario(BaseScenario):
             if other is agent:
                 continue
             if other.adversary:
-                comm.append(other.state.c)
-            other_pos.append(other.state.p_pos - agent.state.p_pos)
-            # other_pos.append(np.array([22, 22]))
+                # comm.append(other.state.c)
+                comm.append([other.id + 10])
+
+            # other_pos.append(other.state.p_pos - agent.state.p_pos)
+            other_pos.append(np.array([other.id, other.id]))
             if not other.adversary:
-                other_vel.append(other.state.p_vel)
-                # other_vel.append(np.array([33, 33]))
+                # other_vel.append(other.state.p_vel)
+                other_vel.append(np.array([-other.id, -other.id]))
         if self.predators_comm:
             if agent.adversary:
-                return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos +
-                                  other_vel + comm)     # OREN
+                # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos +
+                #                   other_vel + comm)     # OREN
+                return np.concatenate([np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
+                                      other_pos + other_vel + comm)
             else:
-                return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
-
+                # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+                return np.concatenate(
+                    [np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
+                    other_pos + other_vel)
         else:
             return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
-            # return np.concatenate([np.array([np.int(agent.name[-1]), np.int(agent.name[-1])])] +
-            #                       [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+            # return np.concatenate([np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos + other_pos + other_vel)
+
 
     def is_done(self, agent, world):
         if agent in self.good_agents(world):

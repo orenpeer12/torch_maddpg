@@ -71,4 +71,3 @@ class running_env_manager():
             ending = " || Total runtime: {0:.1f} minutes.".format((time.time() - start_time) / 60) + "\n"
             print('\r{} |{}| {}% {}'.format(prefix, bar, percent, suffix + ending), end='')
             print("\n")
-

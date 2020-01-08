@@ -10,15 +10,16 @@ from utils.maddpg_utils import *
 from utils.agents import IL_Controller
 from utils.general_functions import *
 
+
 # 02/01/20 09:18
 MODE = "RUN"    # "DEBUG"
 # MODE = "DEBUG"
 
 if __name__ == '__main__':
     config = Arglist()
-    num_runs = config.num_runs
     run_manager = running_env_manager(MODE)
-    for run_num in range(num_runs):
+
+    for run_num in range(config.num_runs):
         run_manager.prep_running_env(config, run_num)
 
         if not config.USE_CUDA:
@@ -27,13 +28,12 @@ if __name__ == '__main__':
         eval_env = make_parallel_env(config)
 
         maddpg = MADDPG.init_from_env(env, config)
-        IL_controller = IL_Controller(config)  # imitation learning controller
+        if config.use_IL:
+            IL_controller = IL_Controller(config)  # imitation learning controller
         replay_buffer = ReplayBuffer(config.buffer_length, maddpg.nagents,
                                      [obsp.shape[0] for obsp in env.observation_space],
                                      [acsp['comm'].n + acsp['act'].n if config.discrete_action else acsp['comm'].n + acsp['act'].shape[0]
                                       for acsp in env.action_space])
-                                     # [acsp['comm'].n + acsp['act'].n if isinstance(acsp, dict) else acsp.n
-                                     #  for acsp in env.action_space])
         t = 0
         # reset test results arrays
         all_ep_rewards = []
@@ -57,7 +57,6 @@ if __name__ == '__main__':
             explr_pct_remaining = max(0, config.n_exploration_steps - step) / config.n_exploration_steps
             maddpg.scale_noise(config.final_noise_scale + (config.init_noise_scale - config.final_noise_scale) * explr_pct_remaining)
             maddpg.reset_noise()
-
             for ep_step in range(config.episode_length):    # 1 episode loop. ends due to term\done
                 # env.env._render("human", False)
                 # time.sleep(0.05)
