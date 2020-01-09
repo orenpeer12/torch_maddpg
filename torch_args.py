@@ -24,9 +24,10 @@ class Arglist:
         # self.prey_max_speed = 0.5
         # self.prey_max_speed = 1.3
         # self.prey_max_speed = 0.6
-        self.prey_max_speed = 1
+        # self.rand_prey_speed = True
+        # self.prey_max_speed = 1
+        self.prey_max_speed = 'random'
         self.pred_max_speed = 1
-        self.rand_prey_speed = True
         self.pred_acc = 3
         # self.prey_acc = 2
         # self.prey_acc = 4
@@ -47,7 +48,7 @@ class Arglist:
         #### General agrs: ####
         #######################
         comm = "_withCom{}".format(self.predators_comm_size) if self.predators_comm else "_noCom"
-        speed = "_SameSpeedPrey" if self.prey_max_speed == self.pred_max_speed else "_SlowPrey" if self.prey_max_speed < self.pred_max_speed else "_FastPrey"
+        speed = "_randPreySpeed" if self.prey_max_speed == 'rand' else "_SameSpeedPrey" if self.prey_max_speed == self.pred_max_speed else "_SlowPrey" if self.prey_max_speed < self.pred_max_speed else "_FastPrey"
         speed = speed if not self.rand_prey_speed else "_randPreySpeed"
         controller = "_controllerPrey" if self.use_prey_controller else "_DDPGprey"
         shape = "_sumShape" if self.shaping else "_noShape"
@@ -120,7 +121,6 @@ class Arglist:
         self.__dict__ = {}
         for k in json_data:
             self.__setattr__(k, json_data[k])
-
 
     def print_args(self):
         for arg in self.__dict__:

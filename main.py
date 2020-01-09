@@ -11,9 +11,9 @@ from utils.agents import IL_Controller
 from utils.general_functions import *
 
 
-# 02/01/20 09:18
-MODE = "RUN"    # "DEBUG"
-# MODE = "DEBUG"
+# 09/01/20 09:18
+# MODE = "RUN"    # "DEBUG"
+MODE = "DEBUG"
 
 if __name__ == '__main__':
     config = Arglist()

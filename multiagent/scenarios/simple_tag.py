@@ -56,7 +56,7 @@ class Scenario(BaseScenario):
         if self.rand_prey_speed:
             for agent in world.agents:
                 if not agent.adversary:
-                    agent.max_speed = 0.4 + np.random.rand()
+                    agent.max_speed = 0.5 + np.random.rand()
         # random properties for agents
         for i, agent in enumerate(world.agents):
             agent.color = \
