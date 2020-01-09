@@ -58,7 +58,7 @@ class DDPGAgent(object):
         self.policy_optimizer = Adam(self.policy.parameters(), lr=lr)
         self.critic_optimizer = Adam(self.critic.parameters(), lr=lr)
         if not discrete_action:
-            self.exploration = OUNoise(num_out_pol)
+            self.exploration = OUNoise(num_out_pol - self.comm_size) # no exploration to comm for the moment!!!
         else:
             self.exploration = 0.3  # epsilon for eps-greedy
         self.discrete_action = discrete_action
@@ -94,13 +94,7 @@ class DDPGAgent(object):
                 action = onehot_from_logits(action)
         else:  # continuous action
             if explore:
-                if self.comm:
-                    a=1
-                #     action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()),
-                #                        requires_grad=False)[:2]
-                # else:
-                action += Variable(Tensor(self.exploration.noise()), requires_grad=False).to(self.device)
-            # action[:, :-self.comm_size] = action[:, :-self.comm_size].clamp(-1, 1)
+                action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()), requires_grad=False).to(self.device)
         return action.clamp(-1, 1)
 
     def get_params(self):

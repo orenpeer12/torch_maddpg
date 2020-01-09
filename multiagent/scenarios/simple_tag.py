@@ -6,8 +6,8 @@ class Scenario(BaseScenario):
     def make_world(self, config):
         self.shaping = config.shaping
         self.predators_comm = config.predators_comm
-        self.rand_prey_speed = config.rand_prey_speed
         world = World()
+        world.randomPreySpeed = True if config.prey_max_speed is 'random' else False
         # set any world properties first
         world.dim_c = config.predators_comm_size if config.predators_comm else 0
         num_prey = config.num_prey
@@ -53,7 +53,7 @@ class Scenario(BaseScenario):
         return world
 
     def reset_world(self, world):
-        if self.rand_prey_speed:
+        if world.randomPreySpeed:
             for agent in world.agents:
                 if not agent.adversary:
                     agent.max_speed = 0.5 + np.random.rand()
@@ -182,8 +182,8 @@ class Scenario(BaseScenario):
             else:
                 return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
                 # return np.concatenate(
-                    # [np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
-                    # other_pos + other_vel)
+                #     [np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
+                #     other_pos + other_vel)
         else:
             return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
             # return np.concatenate([np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos + other_pos + other_vel)
@@ -198,23 +198,3 @@ class Scenario(BaseScenario):
                 return True
         return False
 
-    # def observation(self, agent, world):
-    #     # get positions of all entities in this agent's reference frame
-    #     entity_pos = []
-    #     for entity in world.landmarks:
-    #         if not entity.boundary:
-    #             entity_pos.append(entity.state.p_pos - agent.state.p_pos)
-    #     # communication of all other agents
-    #     comm = []
-    #     other_pos = []
-    #     other_vel = []
-    #     for other in world.agents:
-    #         if other is agent:
-    #             continue
-    #         if other.adversary:
-    #             comm.append(other.state.c)
-    #         other_pos.append(other.state.p_pos - agent.state.p_pos)
-    #         if not other.adversary:
-    #             other_vel.append(other.state.p_vel)
-    #     # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel + comm) # OREN
-    #     return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)

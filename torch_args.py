@@ -38,7 +38,7 @@ class Arglist:
         self.num_predators = 2
         self.shaping = False
         # IL
-        self.use_IL = False  # imitation learning flag.
+        self.use_IL = True  # imitation learning flag.
         self.predators_comm = True
         self.predators_comm_size = 1 if self.predators_comm else 0  # each agent sends a 1-hot-vector in this size to all teammates.
         self.IL_inject_every = 5000 if self.use_IL else -1
@@ -48,12 +48,11 @@ class Arglist:
         #### General agrs: ####
         #######################
         comm = "_withCom{}".format(self.predators_comm_size) if self.predators_comm else "_noCom"
-        speed = "_randPreySpeed" if self.prey_max_speed == 'rand' else "_SameSpeedPrey" if self.prey_max_speed == self.pred_max_speed else "_SlowPrey" if self.prey_max_speed < self.pred_max_speed else "_FastPrey"
-        speed = speed if not self.rand_prey_speed else "_randPreySpeed"
+        speed = "_randomPreySpeed" if self.prey_max_speed == 'random' else "_SameSpeedPrey" if self.prey_max_speed == self.pred_max_speed else "_SlowPrey" if self.prey_max_speed < self.pred_max_speed else "_FastPrey"
         controller = "_controllerPrey" if self.use_prey_controller else "_DDPGprey"
         shape = "_sumShape" if self.shaping else "_noShape"
         IL_str = "_withIL" if self.use_IL else "_noIL"
-        extra_str = "_randomPreySpeed"
+        extra_str = ""
         walls = "_withWalls" if self.bound_world else "_noWalls"
         entities_str = str(self.num_prey) + "prey_" + str(self.num_predators) + "pred_" + \
                        str(self.num_landmarks) + "landmarks" + walls

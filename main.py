@@ -10,8 +10,8 @@ from utils.maddpg_utils import *
 from utils.agents import IL_Controller
 from utils.general_functions import *
 
-
-# 09/01/20 09:18
+# FINALLY!!!
+# 09/01/20 12:18
 # MODE = "RUN"    # "DEBUG"
 MODE = "DEBUG"
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         eval_win_rates = [0]
         # eps_without_IL = 0
         # eps_without_IL_hist = []
-
+        print("\nPrey Max Speed: {}, useIL is {}\n".format(config.prey_max_speed, config.use_IL))
         while step < config.n_time_steps:   # total steps to be performed during a single run
             # start a episode due to episode termination\done
             curr_ep += 1

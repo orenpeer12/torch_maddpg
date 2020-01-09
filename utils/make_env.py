@@ -58,7 +58,7 @@ from utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 import numpy as np
 
 def make_parallel_env(config):
-
+    print("SHIT SHIT SHIT!!!")
     def get_env_fn(config):
         def init_env(config):
             env = make_env(config.env_id, config, discrete_action=config.discrete_action)
