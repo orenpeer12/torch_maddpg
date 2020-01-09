@@ -48,9 +48,9 @@ models_to_compare = [#"1prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL
                      # "1prey_3pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL_DDPGpray_SlowPrey",
                      # "2prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL_controllerPray_SlowPrey",
                      # "2prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_withIL_controllerPray_SlowPrey",
-                     "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noLand_withIL_DDPGprey_SameSpeedPrey",
+                     "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noIL_DDPGprey_randPreySpeed_randomPreySpeed",
                      "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noLand_noIL_DDPGprey_SameSpeedPrey",
-                     "2prey_2pred_0landmarks_withWalls_noCom_noShape_noLand_withIL_DDPGprey_SameSpeedPrey"
+                     "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noLand_withIL_DDPGprey_SameSpeedPrey"
 ]
 # ]
 num_agents = 5

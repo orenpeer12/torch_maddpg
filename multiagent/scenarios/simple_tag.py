@@ -165,25 +165,25 @@ class Scenario(BaseScenario):
             if other is agent:
                 continue
             if other.adversary:
-                # comm.append(other.state.c)
-                comm.append([other.id + 10])
-
-            # other_pos.append(other.state.p_pos - agent.state.p_pos)
-            other_pos.append(np.array([other.id, other.id]))
+                comm.append(other.state.c)
+                # comm.append([other.id + 10])
+                # print("DUBBBBBBBBBBBBUUUUUUUUGGGGGGGGGGGGGGG EEEEEENNNNNNNNNNNNNNVVVVVVVVVVVV!!!!!!!!!!!!!!")
+            other_pos.append(other.state.p_pos - agent.state.p_pos)
+            # other_pos.append(np.array([other.id, other.id]))
             if not other.adversary:
-                # other_vel.append(other.state.p_vel)
-                other_vel.append(np.array([-other.id, -other.id]))
+                other_vel.append(other.state.p_vel)
+                # other_vel.append(np.array([-other.id, -other.id]))
         if self.predators_comm:
             if agent.adversary:
-                # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos +
-                #                   other_vel + comm)     # OREN
-                return np.concatenate([np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
-                                      other_pos + other_vel + comm)
+                return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos +
+                                  other_vel + comm)     # OREN
+                # return np.concatenate([np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
+                #                       other_pos + other_vel + comm)
             else:
-                # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
-                return np.concatenate(
-                    [np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
-                    other_pos + other_vel)
+                return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
+                # return np.concatenate(
+                    # [np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos +
+                    # other_pos + other_vel)
         else:
             return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel)
             # return np.concatenate([np.array([-agent.id, -agent.id])] + [np.array([agent.id, agent.id])] + entity_pos + other_pos + other_vel)
