@@ -7,7 +7,7 @@ class Scenario(BaseScenario):
         self.shaping = config.shaping
         self.predators_comm = config.predators_comm
         world = World()
-        world.randomPreySpeed = True if config.prey_max_speed is 'random' else False
+        world.randomPreySpeed = True if config.prey_max_speed == "random" else False
         # set any world properties first
         world.dim_c = config.predators_comm_size if config.predators_comm else 0
         num_prey = config.num_prey
@@ -16,10 +16,10 @@ class Scenario(BaseScenario):
         num_landmarks = config.num_landmarks
         # add walls
         if config.bound_world:
-            world.walls.append(Wall(orient='H', axis_pos=1.3, endpoints=(-2, 2), width=0.2, hard=False))
-            world.walls.append(Wall(orient='H', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=False))
-            world.walls.append(Wall(orient='V', axis_pos=1.3, endpoints=(-2, 2), width=0.2, hard=False))
-            world.walls.append(Wall(orient='V', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=False))
+            world.walls.append(Wall(orient='H', axis_pos=1.3, endpoints=(-2, 2), width=0.2, hard=True))
+            world.walls.append(Wall(orient='H', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=True))
+            world.walls.append(Wall(orient='V', axis_pos=1.3, endpoints=(-2, 2), width=0.2, hard=True))
+            world.walls.append(Wall(orient='V', axis_pos=-1.3, endpoints=(-2, 2), width=0.2, hard=True))
 
         # add agents
         world.agents = [Agent() for i in range(num_agents)]

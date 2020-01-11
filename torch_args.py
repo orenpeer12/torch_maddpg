@@ -25,8 +25,8 @@ class Arglist:
         # self.prey_max_speed = 1.3
         # self.prey_max_speed = 0.6
         # self.rand_prey_speed = True
-        # self.prey_max_speed = 1
-        self.prey_max_speed = 'random'
+        self.prey_max_speed = 1
+        # self.prey_max_speed = 'random'
         self.pred_max_speed = 1
         self.pred_acc = 3
         # self.prey_acc = 2
@@ -67,7 +67,7 @@ class Arglist:
         # Run parameters
         self.buffer_length = int(1e6)
         self.num_runs = 10
-        self.n_episodes = 20000
+        self.n_episodes = 40000
         # self.n_episodes = 25000
         # self.n_episodes = 50000
         self.episode_length = 40

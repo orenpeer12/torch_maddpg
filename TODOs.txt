@@ -3,7 +3,7 @@
 * init prey with random max-speed (Aviv)
 * try and HIDE AWAY x or y coordinates of prey to one of the agents...
 * for the moment - no exploration in comm-space!!
-
+* prey speed is random. how does that affect its learning?
 Tom-
 Run episodes with increasing amount of channels.and see if comm helps or not. use diversity of prey-speeds.
 * comm for meta learning?

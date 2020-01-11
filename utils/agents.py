@@ -26,6 +26,7 @@ class DDPGAgent(object):
             num_in_critic (int): number of dimensions for critic input
         """
         self.ag_id = ag_id
+        self.num_out_pol = num_out_pol
         self.device = device
         self.group_type = group_type
         # self.device = "cpu"
@@ -94,7 +95,7 @@ class DDPGAgent(object):
                 action = onehot_from_logits(action)
         else:  # continuous action
             if explore:
-                action[:, :-self.comm_size] += Variable(Tensor(self.exploration.noise()), requires_grad=False).to(self.device)
+                action[:, : self.num_out_pol - self.comm_size] += Variable(Tensor(self.exploration.noise()), requires_grad=False).to(self.device)
         return action.clamp(-1, 1)
 
     def get_params(self):

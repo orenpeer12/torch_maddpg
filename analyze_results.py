@@ -38,25 +38,23 @@ CLEANUP = False
 # DISPLAY_LOSS = False
 
 DISPLAY_MEAN_RUN_REWARDS = False
-SHOW_RUN = False
-DISPLAY_MEAN_WIN_RATES = True
+SHOW_RUN = True
+DISPLAY_MEAN_WIN_RATES = False
 SMOOTH = True
 
-models_to_compare = [#"1prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL_controllerPray_SlowPrey",
-                     #"1prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL_DDPGpray_SlowPrey",
-                     # "1prey_3pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL_controllerPray_SlowPrey",
-                     # "1prey_3pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL_DDPGpray_SlowPrey",
-                     # "2prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_noIL_controllerPray_SlowPrey",
-                     # "2prey_1pred_0landmarks_noWalls_noCom_sumShape_noLand_withIL_controllerPray_SlowPrey",
-                     "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noIL_DDPGprey_randPreySpeed_randomPreySpeed",
-                     "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noLand_noIL_DDPGprey_SameSpeedPrey",
-                     "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noLand_withIL_DDPGprey_SameSpeedPrey"
+models_to_compare = [
+    "2prey_2pred_0landmarks_withWalls_noCom_noShape_noIL_DDPGprey_randomPreySpeed",
+    # "2prey_2pred_0landmarks_withWalls_noCom_noShape_withIL_DDPGprey_randomPreySpeed",
+    # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noIL_DDPGprey_randomPreySpeed",
+    # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_withIL_DDPGprey_randomPreySpeed",
+    # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noIL_DDPGprey_SameSpeedPrey",
+    # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_withIL_DDPGprey_SameSpeedPrey",
 ]
-# ]
+
 num_agents = 5
 
 if SHOW_RUN:
-    cur_model = 5
+    cur_model = 0
     # see_runs = [ind for ind in range(6)]
     see_runs = [0]
     wait = 0.05
@@ -207,7 +205,7 @@ if DISPLAY_MEAN_WIN_RATES:
             # plt.plot(mean_ep_rew_mean_across_optim_step)
     # for model in ["Predators", "Prey"]:
     #     plt.figure(model)
-    plt.legend([m.replace("_contAct_thinObs", "").replace("agent", "prey") for m in models_to_compare])
+    plt.legend([m.replace("2prey_2pred_0landmarks_withWalls_", "").replace("_noShape", "") for m in models_to_compare])
     plt.show()
     set_default_mpl()
 #

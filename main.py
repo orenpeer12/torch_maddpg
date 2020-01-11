@@ -12,8 +12,8 @@ from utils.general_functions import *
 
 # FINALLY!!!
 # 09/01/20 12:18
-# MODE = "RUN"    # "DEBUG"
-MODE = "DEBUG"
+MODE = "RUN"    # "DEBUG"
+# MODE = "DEBUG"
 
 if __name__ == '__main__':
     config = Arglist()

@@ -89,5 +89,4 @@ class MLPNetwork_comm(nn.Module):
         h1 = self.nonlin(self.fc1(self.in_fn(X)))
         h2 = self.nonlin(self.fc2(h1))
         out = self.out_fn(self.fc3(h2))
-        out_GSM = gumbel_softmax(out)
         return out
