@@ -4,6 +4,7 @@ from torch.autograd import Variable
 import time
 
 def train_model(maddpg, config, replay_buffer):
+    # t1 = time.time()
     maddpg.prep_training(device=config.device)
     for u_i in range(config.n_rollout_threads):
         for a_i in range(maddpg.nagents):
@@ -14,7 +15,9 @@ def train_model(maddpg, config, replay_buffer):
             maddpg.update(sample, a_i)
         maddpg.update_all_targets()
     maddpg.prep_rollouts(device=config.device)
-
+    # t2 = time.time()
+    # print(t2-t1)
+    # a=1
 
 def eval_model(maddpg, eval_env, ep_len, num_steps, rollout_threads, display=False):
     eval_step = -1

@@ -7,7 +7,7 @@ class Scenario(BaseScenario):
         self.shaping = config.shaping
         self.predators_comm = config.predators_comm
         world = World()
-        world.randomPreySpeed = True if config.prey_max_speed == "random" else False
+        world.randomPreySpeed = True if config.prey_max_speed == 'random' else False
         # set any world properties first
         world.dim_c = config.predators_comm_size if config.predators_comm else 0
         num_prey = config.num_prey

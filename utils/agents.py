@@ -74,6 +74,7 @@ class DDPGAgent(object):
         else:
             self.exploration.scale = scale
 
+    ray
     def step(self, obs, explore=False):
         """
         Take a step forward in environment for a minibatch of observations
@@ -83,7 +84,7 @@ class DDPGAgent(object):
         Outputs:
             action (PyTorch Variable): Actions for this agent
         """
-        action = self.policy(obs).to(self.device)
+        action = self.policy(obs)
         if self.discrete_action:
             if explore:
                 if self.comm:

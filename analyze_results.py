@@ -28,7 +28,7 @@ if not sys.platform.startswith('win'):
 else:
     # from local
     # base_path = Path("C:\\git\\results_predators\\prey_controller\\baseline_winRate")
-    base_path = Path("C:\\git\\results_predators\\baselines")
+    base_path = Path("C:\\git\\results_predators\\baselines\\longEp\\")
     # base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     # base_path = Path("C:\\git\\torch_maddpg\\models\\simple_tag\\")
     path_to_summary = base_path / "logs\\summary.json"
@@ -38,15 +38,15 @@ CLEANUP = False
 # DISPLAY_LOSS = False
 
 DISPLAY_MEAN_RUN_REWARDS = False
-SHOW_RUN = True
-DISPLAY_MEAN_WIN_RATES = False
+SHOW_RUN = False
+DISPLAY_MEAN_WIN_RATES = True
 SMOOTH = True
 
 models_to_compare = [
     "2prey_2pred_0landmarks_withWalls_noCom_noShape_noIL_DDPGprey_randomPreySpeed",
-    # "2prey_2pred_0landmarks_withWalls_noCom_noShape_withIL_DDPGprey_randomPreySpeed",
-    # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noIL_DDPGprey_randomPreySpeed",
-    # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_withIL_DDPGprey_randomPreySpeed",
+    "2prey_2pred_0landmarks_withWalls_noCom_noShape_withIL_DDPGprey_randomPreySpeed",
+    "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noIL_DDPGprey_randomPreySpeed",
+    "2prey_2pred_0landmarks_withWalls_withCom1_noShape_withIL_DDPGprey_randomPreySpeed",
     # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_noIL_DDPGprey_SameSpeedPrey",
     # "2prey_2pred_0landmarks_withWalls_withCom1_noShape_withIL_DDPGprey_SameSpeedPrey",
 ]
@@ -199,7 +199,7 @@ if DISPLAY_MEAN_WIN_RATES:
         agent_type = "Predators"
 
         plt.figure(agent_type)
-
+        if SMOOTH: win_rates = smooth(win_rates)
         plt.plot(win_rates, linewidth=1)
         ##
             # plt.plot(mean_ep_rew_mean_across_optim_step)
