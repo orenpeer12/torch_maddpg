@@ -74,7 +74,6 @@ class DDPGAgent(object):
         else:
             self.exploration.scale = scale
 
-    ray
     def step(self, obs, explore=False):
         """
         Take a step forward in environment for a minibatch of observations

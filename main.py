@@ -24,8 +24,8 @@ else:
 
 # FINALLY!!!
 # 14/01/20 18:31
-MODE = "RUN"    # "DEBUG"
-# MODE = "DEBUG"
+# MODE = "RUN"    # "DEBUG"
+MODE = "DEBUG"
 
 def run_main(run_num):
     config = Arglist()
